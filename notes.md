@@ -1,5 +1,7 @@
 ## TODO
 
+0. Може би първо мини материала в репото.
+
 1. Статии
     - Collaborative Filtering
     - Content-Based Filtering
