@@ -29,6 +29,34 @@
 
 11. Документация и презентация.
 
+## Sources
+
+- https://medium.com/@corymaklin/model-based-collaborative-filtering-svd-19859c764cee
+
+- https://www.reddit.com/r/learnmachinelearning/comments/q8g1i3/how_can_singular_value_decomposition_be_used_in/
+
+-  Recommendation System Using Autoencoders by Diana Ferreira, Sofia Silva, António Abelha and José Machado (https://www.mdpi.com/2076-3417/10/16/5510) - автоенкодер с по-висока производителност от SVD при оскъдни данни. Имплементира дропаут (datasets movielens)
+
+- Recommendation System With Hierarchical Recurrent Neural Network for Long-Term Time Series Byeongjin Choe; Taegwan Kang; Kyomin Jung (https://ieeexplore.ieee.org/abstract/document/9430555) йерархична рекурентна, предсказва следващия избор на клиент (dataset Movielens 1 million movie review)
+
+- Remembering past and predicting future: a hybrid recurrent neural network based recommender system (https://pmc.ncbi.nlm.nih.gov/articles/PMC9440998/) - добавя разнообразие, приема, че вкусът се променя
+
+- Collaborative Recurrent Autoencoder: Recommend while Learning to Fill in the Blanks (https://arxiv.org/abs/1611.00454) fill in the blank and beta pooling са новости (датасетове CiteULike, Netflix)
+
+- A Survey on Deep Neural Networks in Collaborative Filtering Recommendation Systems (https://arxiv.org/abs/2412.01378) за бейслайн MLP, за оскъдни данни - автоенкодери.
+
+- Development of a Hybrid Recommendation System Using Collaborative Filtering and Content-Based Filtering Techniques (www.irejournals.com/formatedpaper/1708607.pdf) комбинация collab + conten е по-оптимално от само едното (датасетове movielens и netflix) 
+
+- From Traditional Filtering to Deep Representations: A Systematic Review of Neural Architectures in Recommender Systems (https://www.researchgate.net/publication/397608567_From_Traditional_Filtering_to_Deep_Representations_A_Systematic_Review_of_Neural_Architectures_in_Recommender_Systems) дълбоки мрежи = по-висока производителност, но искат изчислителна мощ и може да са трудни за обяснение. 
+
+// preview only <br>
+// Auto-Encoder based Hybrid Collaborative Filtering System
+Shelke, Nikhil Sunil (https://www.proquest.com/openview/b913e3f4bf976a6aac23e7d7cd3d422e/1?pq-origsite=gscholar&cbl=18750&diss=y)
+// Deep autoencoders for feature learning with embeddings for recommendations: a novel recommender system solution Kiran Rama, Pradeep Kumar & Bharat Bhasker (https://link.springer.com/article/10.1007/s00521-021-06065-9)
+  - datasets MovieLens100K: http://files.grouplens.org/datasets/movielens/ml-latest-small.zip, MovieLens1M: http://files.grouplens.org/datasets/movielens/ml-1m.zip, FilmTrust: https://www.librec.net/datasets/filmtrust.zip.
+
+  // Deep learning-based collaborative filtering recommender systems: a comprehensive and systematic review
+
 
 ## Assignment: 
 1. Генериране на препоръка.
