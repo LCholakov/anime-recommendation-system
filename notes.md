@@ -2,13 +2,13 @@
 
 0. Може би първо мини материала в репото.
 
-1. Статии
+✅　1. Статии
     - Collaborative Filtering
     - Content-Based Filtering
     - Хибридни
     - Рекурентни невронни мрежи, Автоенкодери.
 
-2. Данни
+✅　2. Данни
     - намери датасет, нещо със заглавия, жанрове, тагове и някаква обратна връзка като рейтинг.
 
 3. Обработи датасета: "брой наблюдения, брой и тип на характеристиките, статистически зависимости в данните, аномалии в данните. Докладване и анализ, илюстриран с подходящи визуализации и придружен с коментари". +тестове?
@@ -49,6 +49,8 @@
 
 - From Traditional Filtering to Deep Representations: A Systematic Review of Neural Architectures in Recommender Systems (https://www.researchgate.net/publication/397608567_From_Traditional_Filtering_to_Deep_Representations_A_Systematic_Review_of_Neural_Architectures_in_Recommender_Systems) дълбоки мрежи = по-висока производителност, но искат изчислителна мощ и може да са трудни за обяснение. 
 
+- anime recommender with RAG https://medium.com/@tahasinahoni2/from-data-to-recommendations-how-i-built-an-anime-recommender-with-rag-and-vector-databases-7fb99c77b4cc
+
 // preview only <br>
 // Auto-Encoder based Hybrid Collaborative Filtering System
 Shelke, Nikhil Sunil (https://www.proquest.com/openview/b913e3f4bf976a6aac23e7d7cd3d422e/1?pq-origsite=gscholar&cbl=18750&diss=y)
@@ -57,6 +59,13 @@ Shelke, Nikhil Sunil (https://www.proquest.com/openview/b913e3f4bf976a6aac23e7d7
 
   // Deep learning-based collaborative filtering recommender systems: a comprehensive and systematic review
 
+## Dataset 
+
+- може би най-пълен https://github.com/Hernan4444/MyAnimeList-Database/tree/master скрейпнат от сайт 
+
+- също много пълен от Kaggle 24905 заглавия. https://www.kaggle.com/datasets/dbdmobile/myanimelist-dataset
+
+- най-популярен в Kaggle 12292 заглавия, анонимизирани юзъри. Малък размер. https://www.kaggle.com/datasets/CooperUnion/anime-recommendations-database
 
 ## Assignment: 
 1. Генериране на препоръка.
