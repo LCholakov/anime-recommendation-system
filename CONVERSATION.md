@@ -330,3 +330,140 @@ That said, the real answer to your question: **if the functions were truly comme
 Next step on the plan is the EDA (step 3). Want to tackle that now — `src/eda.py` with some basic analysis functions, plus tests first?
 
 ---
+
+---
+
+### User: I've reorganized the folders a bit. fix my tests
+
+**Bob:** *(saw the new structure — `src/data_work/`, `tests/data_tests/` — old hyphenated folders gone)*
+
+Two problems: the import path uses a hyphen (`data-work`) which is invalid Python — hyphens aren't allowed in module names. Also no `__init__.py` files anywhere.
+
+---
+
+### User: I've renamed the folders. add __init__ and fix imports
+
+**Bob:** Added `src/__init__.py`, `src/data_work/__init__.py`, `tests/__init__.py`, `tests/data_tests/__init__.py` and fixed the import in `tests/data_tests/test_data.py` from `src.data-work.data_loader` → `src.data_work.data_loader`.
+
+---
+
+---
+
+### User: add test that we're getting the required columns in the data. That's anime_id,name,genre,type,episodes,rating,members for anime list and user_id,anime_id,rating for ratings list
+
+**Bob:** Added `test_when_called_with_valid_csv_then_has_required_columns` to both `TestLoadAnimeData` and `TestLoadRatingData`. Total is now 8 tests.
+
+---
+
+---
+
+### User: sick. I tested it works. This seems much easier to follow if the project is up to spec and actually works with the tests
+
+**Bob:** Exactly — that's the whole point of BDD. The tests act as living documentation. You can look at the test file and instantly know what the code is supposed to do, without reading the implementation. And if anything ever breaks, you'll know immediately and exactly where.
+
+We've got a solid foundation now:
+
+```
+src/
+  data_work/
+    data_loader.py   ✅ implemented
+tests/
+  data_tests/
+    test_data.py     ✅ 8 tests passing
+```
+
+Next up is filling in the other files you already have in `src/data_work/` — `data_analyzer.py`, `data_cleaner.py`, `data_visualizer.py`. That's the EDA step. Want to start there?
+
+---
+
+---
+
+### User: can you explain what's the __init__.py file? why not init in the existing files
+
+**Bob:** Good question. `__init__.py` is a special file that tells Python *"this folder is a package you can import from"*. It doesn't contain your logic — it just marks the directory.
+
+Without it:
+```python
+from src.data_work.data_loader import load_anime_data  # ❌ Python doesn't know src is a package
+```
+
+With it:
+```python
+from src.data_work.data_loader import load_anime_data  # ✅ works
+```
+
+**Why a separate file and not inside the existing ones?**
+
+Because it's a folder-level marker, not a file-level one. Every folder that needs to be importable needs its own `__init__.py`. Your actual code lives in `data_loader.py`, `data_analyzer.py` etc. — those are the real files. The `__init__.py` is just the "door" Python needs to walk through to find them.
+
+Think of it like this:
+```
+src/                     ← needs __init__.py to be a package
+  data_work/             ← needs __init__.py to be a sub-package
+    __init__.py          ← the "door"
+    data_loader.py       ← your actual code
+```
+
+You can also put stuff *inside* `__init__.py` (like re-exports) but for our purposes it stays empty — we just need the file to exist.
+
+---
+
+---
+
+### User: alright then. tests folder needs some work. rename file to match data_... style of files where the source will live
+
+**Bob:** Checked the src structure — source files are `data_loader.py`, `data_analyzer.py`, `data_cleaner.py`, `data_visualizer.py`. Created `tests/data_tests/test_data_loader.py` to mirror `data_loader.py`. Asked user to manually delete the old `test_data.py`.
+
+Expected final structure:
+```
+tests/
+  data_tests/
+    test_data_loader.py     ← mirrors data_loader.py
+    test_data_analyzer.py   ← to be created
+    test_data_cleaner.py    ← to be created
+    test_data_visualizer.py ← to be created
+```
+
+---
+
+---
+
+### User: so let's clean some data. First write tests for data cleaner func. test that -1 ratings are removed from the data. the cleaner will return a new data frame. also the cleaner creates new files ..._clean.csv
+
+**Bob:** Created `tests/data_tests/test_data_cleaner.py` with 3 tests for `clean_rating_data`:
+1. returns a DataFrame
+2. -1 ratings are removed
+3. `rating_clean.csv` is created on disk
+
+`tearDown` deletes the clean CSV after each test run so tests don't pollute the `data/` folder.
+
+---
+
+---
+
+### User: define the funcs, no implementation, just pass
+
+**Bob:** Added stub to `src/data_work/data_cleaner.py`:
+
+```python
+def clean_rating_data(input_path: str, output_path: str) -> pd.DataFrame:
+    pass
+```
+
+---
+
+---
+
+### User: alright then. populate
+
+**Bob:** Implemented `clean_rating_data` in `src/data_work/data_cleaner.py`:
+
+```python
+def clean_rating_data(input_path: str, output_path: str) -> pd.DataFrame:
+    df = pd.read_csv(input_path)
+    df = df[df["rating"] != -1]
+    df.to_csv(output_path, index=False)
+    return df
+```
+
+---

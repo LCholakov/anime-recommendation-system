@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 
-from src.data import load_anime_data, load_rating_data
+from src.data_work.data_loader import load_anime_data, load_rating_data
 
 
 class TestLoadAnimeData(unittest.TestCase):
@@ -12,6 +12,13 @@ class TestLoadAnimeData(unittest.TestCase):
     def test_when_called_with_valid_csv_then_dataframe_is_not_empty(self):
         result = load_anime_data("data/anime.csv")
         self.assertFalse(result.empty)
+
+    def test_when_called_with_valid_csv_then_has_required_columns(self):
+        result = load_anime_data("data/anime.csv")
+        self.assertListEqual(
+            list(result.columns),
+            ["anime_id", "name", "genre", "type", "episodes", "rating", "members"]
+        )
 
     def test_when_called_with_nonexistent_path_then_raises_file_not_found_error(self):
         with self.assertRaises(FileNotFoundError):
@@ -26,6 +33,13 @@ class TestLoadRatingData(unittest.TestCase):
     def test_when_called_with_valid_csv_then_dataframe_is_not_empty(self):
         result = load_rating_data("data/rating.csv")
         self.assertFalse(result.empty)
+
+    def test_when_called_with_valid_csv_then_has_required_columns(self):
+        result = load_rating_data("data/rating.csv")
+        self.assertListEqual(
+            list(result.columns),
+            ["user_id", "anime_id", "rating"]
+        )
 
     def test_when_called_with_nonexistent_path_then_raises_file_not_found_error(self):
         with self.assertRaises(FileNotFoundError):
