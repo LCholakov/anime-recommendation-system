@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pandas as pd
 from src.data_work.data_loader import load_anime_data, load_rating_data
 from src.data_work.data_cleaner import clean_anime_data, clean_rating_data, save_dataframe

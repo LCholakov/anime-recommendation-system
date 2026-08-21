@@ -632,3 +632,67 @@ python -u clean_data.py
 **Bob:** Shell is stuck in a `dquote>` prompt — unclosed quote from a previous command. Hit `Ctrl+C` to get back to a normal prompt, then run `python clean_data.py`.
 
 ---
+
+---
+
+### User: now no need for tests. We do data analysis in data_analyzer on anime. count number of anime titles, number of genres, list genres, list types, rank top 10 by rating, rank top 10 by members
+
+**Bob:** Implemented 6 functions in `src/data_work/data_analyzer.py`:
+- `count_anime_titles(df)` — returns total row count
+- `count_genres(df)` — counts unique genres (splits comma-separated genre field)
+- `list_genres(df)` — sorted list of all unique genres
+- `list_types(df)` — sorted list of all unique types
+- `top_10_by_rating(df)` — top 10 anime by rating
+- `top_10_by_members(df)` — top 10 anime by members
+
+---
+
+---
+
+### User: analyze_data.py can be the script to run for user friendliness
+
+**Bob:** Populated `analyze_data.py` — loads `data/anime_clean.csv` and prints all 6 analysis results. Run with `python analyze_data.py`.
+
+---
+
+---
+
+### User: make it also spit out an extremely simple but pretty html file for easy viewing
+
+**Bob:** Updated `analyze_data.py` to also generate `data/anime_analysis.html` — stat cards for titles/genres/types, tag pills for genre and type lists, and the two top-10 tables. Opens in any browser.
+
+---
+
+---
+
+### User: ok wait. Put the html output in the vizualize_data.py
+
+**Bob:** Moved HTML generation to `scripts/visualize_data.py`. Stripped it from `scripts/analyze_data.py`. Now:
+- `scripts/analyze_data.py` — terminal output only
+- `scripts/visualize_data.py` — generates `data/anime_analysis.html`
+
+Also noted user has reorganized root-level scripts into a `scripts/` folder.
+
+---
+
+---
+
+### User: fix the scripts I moved in scripts
+
+**Bob:** The imports and paths in all three scripts are correct as-is. The fix was adding `scripts/__init__.py` so Python treats the folder as a package. Scripts must always be run from the project root using `-m`:
+
+```bash
+python -m scripts.clean_data
+python -m scripts.analyze_data
+python -m scripts.visualize_data
+```
+
+---
+
+---
+
+### User: ModuleNotFoundError: No module named 'src'
+
+**Bob:** Added `sys.path.insert(0, ...)` at the top of all three scripts to inject the project root into Python's module search path. Now `python scripts/analyze_data.py` works without `-m`.
+
+---

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Anime Data Analysis</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; color: #1f2328; }
+  h1   { font-size: 1.6rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+  h2   { font-size: 1.1rem; margin-top: 32px; color: #3b82d4; }
+  .stats { display: flex; gap: 32px; margin: 16px 0; }
+  .stat  { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px 24px; }
+  .stat span { display: block; font-size: 2rem; font-weight: 700; }
+  .stat label { font-size: 0.85rem; color: #57606a; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .tag  { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 4px; padding: 2px 10px; font-size: 0.82rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 0.9rem; }
+  th    { background: #f7f8fa; border-bottom: 2px solid #e5e7eb; text-align: left; padding: 8px 10px; }
+  td    { border-bottom: 1px solid #e5e7eb; padding: 7px 10px; }
+  tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+<h1>Anime Data Analysis</h1>
+
+<div class="stats">
+  <div class="stat"><span>12017</span><label>Anime titles</label></div>
+  <div class="stat"><span>43</span><label>Unique genres</label></div>
+  <div class="stat"><span>6</span><label>Types</label></div>
+</div>
+
+<h2>Genres</h2>
+<div class="tags"><span class="tag">Action</span><span class="tag">Adventure</span><span class="tag">Cars</span><span class="tag">Comedy</span><span class="tag">Dementia</span><span class="tag">Demons</span><span class="tag">Drama</span><span class="tag">Ecchi</span><span class="tag">Fantasy</span><span class="tag">Game</span><span class="tag">Harem</span><span class="tag">Hentai</span><span class="tag">Historical</span><span class="tag">Horror</span><span class="tag">Josei</span><span class="tag">Kids</span><span class="tag">Magic</span><span class="tag">Martial Arts</span><span class="tag">Mecha</span><span class="tag">Military</span><span class="tag">Music</span><span class="tag">Mystery</span><span class="tag">Parody</span><span class="tag">Police</span><span class="tag">Psychological</span><span class="tag">Romance</span><span class="tag">Samurai</span><span class="tag">School</span><span class="tag">Sci-Fi</span><span class="tag">Seinen</span><span class="tag">Shoujo</span><span class="tag">Shoujo Ai</span><span class="tag">Shounen</span><span class="tag">Shounen Ai</span><span class="tag">Slice of Life</span><span class="tag">Space</span><span class="tag">Sports</span><span class="tag">Super Power</span><span class="tag">Supernatural</span><span class="tag">Thriller</span><span class="tag">Vampire</span><span class="tag">Yaoi</span><span class="tag">Yuri</span></div>
+
+<h2>Types</h2>
+<div class="tags"><span class="tag">Movie</span><span class="tag">Music</span><span class="tag">ONA</span><span class="tag">OVA</span><span class="tag">Special</span><span class="tag">TV</span></div>
+
+<h2>Top 10 by Rating</h2>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>name</th>
+      <th>genre</th>
+      <th>type</th>
+      <th>rating</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Taka no Tsume 8: Yoshida-kun no X-Files</td>
+      <td>Comedy, Parody</td>
+      <td>Movie</td>
+      <td>10.00</td>
+    </tr>
+    <tr>
+      <td>Spoon-hime no Swing Kitchen</td>
+      <td>Adventure, Kids</td>
+      <td>TV</td>
+      <td>9.60</td>
+    </tr>
+    <tr>
+      <td>Mogura no Motoro</td>
+      <td>Slice of Life</td>
+      <td>Movie</td>
+      <td>9.50</td>
+    </tr>
+    <tr>
+      <td>Kimi no Na wa.</td>
+      <td>Drama, Romance, School, Supernatural</td>
+      <td>Movie</td>
+      <td>9.37</td>
+    </tr>
+    <tr>
+      <td>Kahei no Umi</td>
+      <td>Historical</td>
+      <td>Movie</td>
+      <td>9.33</td>
+    </tr>
+    <tr>
+      <td>Fullmetal Alchemist: Brotherhood</td>
+      <td>Action, Adventure, Drama, Fantasy, Magic, Military, Shounen</td>
+      <td>TV</td>
+      <td>9.26</td>
+    </tr>
+    <tr>
+      <td>Gintama°</td>
+      <td>Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen</td>
+      <td>TV</td>
+      <td>9.25</td>
+    </tr>
+    <tr>
+      <td>Yakusoku: Africa Mizu to Midori</td>
+      <td>Drama, Kids</td>
+      <td>OVA</td>
+      <td>9.25</td>
+    </tr>
+    <tr>
+      <td>Steins;Gate</td>
+      <td>Sci-Fi, Thriller</td>
+      <td>TV</td>
+      <td>9.17</td>
+    </tr>
+    <tr>
+      <td>Gintama&amp;#039;</td>
+      <td>Action, Comedy, Historical, Parody, Samurai, Sci-Fi, Shounen</td>
+      <td>TV</td>
+      <td>9.16</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Top 10 by Members</h2>
+<table class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>name</th>
+      <th>genre</th>
+      <th>type</th>
+      <th>members</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Death Note</td>
+      <td>Mystery, Police, Psychological, Supernatural, Thriller</td>
+      <td>TV</td>
+      <td>1013917</td>
+    </tr>
+    <tr>
+      <td>Shingeki no Kyojin</td>
+      <td>Action, Drama, Fantasy, Shounen, Super Power</td>
+      <td>TV</td>
+      <td>896229</td>
+    </tr>
+    <tr>
+      <td>Sword Art Online</td>
+      <td>Action, Adventure, Fantasy, Game, Romance</td>
+      <td>TV</td>
+      <td>893100</td>
+    </tr>
+    <tr>
+      <td>Fullmetal Alchemist: Brotherhood</td>
+      <td>Action, Adventure, Drama, Fantasy, Magic, Military, Shounen</td>
+      <td>TV</td>
+      <td>793665</td>
+    </tr>
+    <tr>
+      <td>Angel Beats!</td>
+      <td>Action, Comedy, Drama, School, Supernatural</td>
+      <td>TV</td>
+      <td>717796</td>
+    </tr>
+    <tr>
+      <td>Code Geass: Hangyaku no Lelouch</td>
+      <td>Action, Mecha, Military, School, Sci-Fi, Super Power</td>
+      <td>TV</td>
+      <td>715151</td>
+    </tr>
+    <tr>
+      <td>Naruto</td>
+      <td>Action, Comedy, Martial Arts, Shounen, Super Power</td>
+      <td>TV</td>
+      <td>683297</td>
+    </tr>
+    <tr>
+      <td>Steins;Gate</td>
+      <td>Sci-Fi, Thriller</td>
+      <td>TV</td>
+      <td>673572</td>
+    </tr>
+    <tr>
+      <td>Mirai Nikki (TV)</td>
+      <td>Action, Mystery, Psychological, Shounen, Supernatural, Thriller</td>
+      <td>TV</td>
+      <td>657190</td>
+    </tr>
+    <tr>
+      <td>Toradora!</td>
+      <td>Comedy, Romance, School, Slice of Life</td>
+      <td>TV</td>
+      <td>633817</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
