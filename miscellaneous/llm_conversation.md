@@ -696,3 +696,15 @@ python -m scripts.visualize_data
 **Bob:** Added `sys.path.insert(0, ...)` at the top of all three scripts to inject the project root into Python's module search path. Now `python scripts/analyze_data.py` works without `-m`.
 
 ---
+
+---
+
+### User: I have renamed notes.md to action-plan and CONVERSATION has been renamed llm_conversation and I moved both to miscellaneous folder.
+
+**Bob:** Confirmed new locations:
+- `miscellaneous/action_plan.md` — was `notes.md`
+- `miscellaneous/llm_conversation.md` — was `CONVERSATION.md`
+
+Will append to `miscellaneous/llm_conversation.md` from now on.
+
+---
