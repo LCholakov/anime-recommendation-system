@@ -803,3 +803,67 @@ Updated `scripts/visualize_data.py` to generate both `data/anime_analysis.html` 
 **Bob:** Updated bins to `[0, 3, 9, 50, 100, 500, 1000, 2500, inf]` with matching labels.
 
 ---
+
+---
+
+### User: Implement baseline model. split train/test split 70/30 for each user. Use only users with above 5 ratings. Popularity is calculated from training data only. Calculate with Bayesian weighted rating score=(v/(v+m))*R+(m/(v+m))*C. Write data out to the model file.
+
+**Bob:** Updated `tests/model_tests/test_baseline.py` with 3 test classes:
+- `TestSplitTrainTest` — 3 tests for the split function
+- `TestComputeBayesianScores` — 3 tests for Bayesian scoring
+- `TestRecommendPopularAnime` — 3 tests for recommendation (updated to use bayesian_score)
+
+Implemented `src/models/baseline.py` with:
+- `split_train_test(ratings_df, min_ratings=5, test_ratio=0.3)` — filters users with <5 ratings, splits 70/30 per user
+- `compute_bayesian_scores(train_df)` — R=avg rating, v=count, C=global avg, m=80th percentile of counts
+- `recommend_popular_anime(scores_df, ratings_df, user_id, n)` — returns top-n by bayesian_score, excluding already rated
+
+Created `scripts/run_baseline.py` — saves `data/train.csv`, `data/test.csv`, `data/baseline_scores.csv`.
+
+---
+
+---
+
+### User: make the baseline model return 10 suggestions based on the training set. Create evaluation of the model. Maybe something like compare the test dataset result to the list returned by the model and evaluate precision, recall, hit rate. Record results in model_performance_tracker.xlsx together with any model configuration points that are important.
+
+**Bob:** Added `evaluate_model()` to `src/models/baseline.py` — for each user in test set, gets top-10 recommendations (excluding train items), computes precision/recall/hit-rate, averages across all users.
+
+Added `TestEvaluateModel` to test file with 4 tests including edge cases for hit_rate=1.0 and hit_rate=0.0.
+
+Updated `scripts/run_baseline.py` to:
+- evaluate the model (hit_rate, precision@10, recall@10)
+- write a formatted row to `report/model_performance_tracker.xlsx` using openpyxl with:
+  - blue header row (written once)
+  - light blue baseline row
+  - columns: Model, min_ratings, test_ratio, n_recommendations, m (percentile), Hit Rate @10, Precision @10, Recall @10, Comments
+
+---
+
+---
+
+### User: tests/model_tests/test_baseline.py:117: AssertionError — FAILED test_when_no_test_items_are_in_recommendations_then_hit_rate_is_0 - AssertionError: 1.0 != 0.0
+
+**Bob:** Bug was in the test fixture, not the implementation. User 2's train items are anime 1 and 2. Top 3 recommendations after excluding those are anime 3, 5, 4 — so anime 4 (the test item) WAS being recommended. Fixed test to use `n=2` so only anime 3 and 5 are returned, correctly leaving 4 out.
+
+---
+
+---
+
+### User: can I have a file that holds all requirements and it can be run to install all necessary
+
+**Bob:** Populated `requirements.txt` with the 4 direct dependencies pinned to installed versions: `numpy==2.0.2`, `openpyxl==3.1.5`, `pandas==2.3.3`, `pytest==8.4.2`. Install with `pip install -r requirements.txt`.
+
+---
+
+---
+
+### User: gitignore the temp xlsx file
+
+**Bob:** Cannot write to `.gitignore` directly (tool restriction). Told user to manually add these two lines at the bottom:
+
+```
+# Excel temp/lock files
+~$*.xlsx
+```
+
+---
