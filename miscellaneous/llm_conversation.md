@@ -1408,3 +1408,28 @@ Files changed: `src/models/bow.py`, `src/models/tfidf.py`, `src/models/svd.py`. 
 **Bob:** Glad it's finally gone! The tricky part was that it was two separate problems masquerading as one — the stale pickle was hiding the fact that the real issue was a platform-level NumPy quirk, not the data itself.
 
 ---
+
+---
+
+### User: does the perf tracker record time, like training time or sth similar? does it make sense to have it?
+
+**Bob:** No training time is recorded currently. The tracker has: Run #, Timestamp, Model, Split, min_ratings, n_recommendations, epochs, batch_size, patience, embed_dim, n_components, train_users, Hit Rate @10, Precision @10, Recall @10, Comment.
+
+Makes sense to add for the models that actually train — SVD, Autoencoder, NCF. A 600s NCF run vs a 5s BoW run is part of the story the table is supposed to tell. Baseline/BoW/TF-IDF are sub-second so "N/A" is fine there. The change would be: add optional `train_secs` key to the `hyperparams` dict in `log_run()`, add a "Train time (s)" column to the tracker, and wrap the training call in each run script with `time.time()`.
+
+---
+
+---
+
+### User: add it
+
+**Bob:** Added "Train time (s)" column to the tracker. Changes:
+
+- **`src/models/evaluator.py`**: added `hyperparams.get("train_secs", NA)` to `row_data` and `"Train time (s)"` to `headers`, placed between `train_users` and `Hit Rate @10`.
+- **`scripts/run_svd.py`**: wrapped `train_svd()` with `time.time()`, passes `train_secs` to `log_run`.
+- **`scripts/run_autoencoder.py`**: same around `train_autoencoder()`.
+- **`scripts/run_ncf.py`**: same around `train_ncf()`.
+
+Baseline, BoW, and TF-IDF pass no `train_secs` so they record `"N/A"` — they have no meaningful training phase.
+
+---

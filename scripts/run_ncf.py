@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
@@ -23,6 +24,7 @@ print(f"Train: {len(train)} rows | Test: {len(test)} rows")
 
 # --- train NCF ---
 print(f"Training NCF (embed={EMBED_DIM}, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE})...")
+_t0 = time.time()
 model, user_map, anime_map = train_ncf(
     train,
     embed_dim=EMBED_DIM,
@@ -30,7 +32,9 @@ model, user_map, anime_map = train_ncf(
     batch_size=BATCH_SIZE,
     patience=PATIENCE,
 )
+TRAIN_SECS = round(time.time() - _t0, 1)
 print(f"  Users: {len(user_map)} | Anime: {len(anime_map)}")
+print(f"  Train time: {TRAIN_SECS}s")
 
 # --- shared eval sample (same 1000 users across all models) ---
 # NCF can only score users in user_map; others get empty recs → 0 hits
@@ -59,7 +63,7 @@ log_run(
     {
         "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
         "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
-        "embed_dim": EMBED_DIM,
+        "embed_dim": EMBED_DIM, "train_secs": TRAIN_SECS,
     },
     COMMENT,
 )

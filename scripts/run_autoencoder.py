@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
@@ -39,7 +40,10 @@ print(f"  Matrix shape: {matrix.shape}")
 
 # --- train autoencoder ---
 print(f"Training autoencoder (epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE})...")
+_t0 = time.time()
 model = train_autoencoder(matrix, epochs=EPOCHS, batch_size=BATCH_SIZE, patience=PATIENCE)
+TRAIN_SECS = round(time.time() - _t0, 1)
+print(f"  Train time: {TRAIN_SECS}s")
 
 # --- shared eval sample (same 1000 users across all models) ---
 # AE only saw TRAIN_USERS users; for the rest, recommend_autoencoder returns empty → 0 hits
@@ -69,7 +73,7 @@ log_run(
     {
         "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
         "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
-        "train_users": TRAIN_USERS,
+        "train_users": TRAIN_USERS, "train_secs": TRAIN_SECS,
     },
     COMMENT,
 )

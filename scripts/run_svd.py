@@ -14,11 +14,15 @@ test     = pd.read_csv("data/test.csv")
 print(f"Train: {len(train)} rows | Test: {len(test)} rows")
 
 # --- build user-item matrix & train SVD ---
+import time
 N_COMPONENTS = 50
 print(f"Building user-item matrix and training SVD (n_components={N_COMPONENTS})...")
-matrix       = build_user_item_matrix(train)
+matrix = build_user_item_matrix(train)
+_t0 = time.time()
 reconstructed, _, _ = train_svd(matrix, n_components=N_COMPONENTS)
+TRAIN_SECS = round(time.time() - _t0, 1)
 print(f"  Matrix shape: {matrix.shape}")
+print(f"  Train time: {TRAIN_SECS}s")
 
 # --- shared eval sample (same 1000 users across all models) ---
 # keep only those present in the reconstructed matrix (should be all of them)
@@ -42,7 +46,8 @@ log_run(
     "report/model_performance_tracker.xlsx",
     "SVD Collaborative Filtering",
     metrics,
-    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10, "n_components": N_COMPONENTS},
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
+     "n_components": N_COMPONENTS, "train_secs": TRAIN_SECS},
     COMMENT,
 )
 print("✅ Results written to report/model_performance_tracker.xlsx")

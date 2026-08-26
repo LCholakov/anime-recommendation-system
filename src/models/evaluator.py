@@ -70,6 +70,7 @@ def log_run(
         hyperparams.get("embed_dim",         NA),
         hyperparams.get("n_components",      NA),
         hyperparams.get("train_users",       NA),
+        hyperparams.get("train_secs",        NA),
         metrics.get("hit_rate",  0.0),
         metrics.get("precision", 0.0),
         metrics.get("recall",    0.0),
@@ -79,6 +80,7 @@ def log_run(
         "Run #", "Timestamp", "Model", "Split",
         "min_ratings", "n_recommendations",
         "epochs", "batch_size", "patience", "embed_dim", "n_components", "train_users",
+        "Train time (s)",
         "Hit Rate @10", "Precision @10", "Recall @10",
         "What changed / Comment",
     ]
