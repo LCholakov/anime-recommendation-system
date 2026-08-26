@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 from src.data_work.data_loader import load_anime_data
 from src.models.tfidf import build_tfidf_matrix, recommend_tfidf
-from src.models.evaluator import evaluate, append_to_tracker
+from src.models.evaluator import evaluate, log_run
 
 # --- load data ---
 anime_df = load_anime_data("data/anime_clean.csv")
@@ -31,16 +31,14 @@ print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
 
-# --- write to model performance tracker ---
-HEADERS = [
-    "Model", "min_ratings", "test_ratio", "n_recommendations",
-    "m (percentile)", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"
-]
-row_data = [
+# --- record run in tracker ---
+# Edit COMMENT before each run to describe what changed.
+COMMENT = "Content-based. TF-IDF genre vectors, L2-normalised. Rare genres weighted higher than common ones."
+log_run(
+    "report/model_performance_tracker.xlsx",
     "TF-IDF + Cosine Similarity",
-    5, "leave-one-out", 10, "N/A",
-    metrics["hit_rate"], metrics["precision"], metrics["recall"],
-    "Content-based. TF-IDF genre vectors, cosine similarity weighted by user rating. Rare genres weighted higher than common ones."
-]
-append_to_tracker("report/model_performance_tracker.xlsx", row_data, HEADERS)
+    metrics,
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10},
+    COMMENT,
+)
 print("✅ Results written to report/model_performance_tracker.xlsx")

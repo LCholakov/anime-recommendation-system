@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Callable
+from datetime import datetime
 
 
 def evaluate(
@@ -30,6 +31,70 @@ def evaluate(
         "precision": round(sum(precisions) / len(precisions), 4),
         "recall":    round(sum(recalls) / len(recalls), 4),
     }
+
+
+def log_run(
+    xlsx_path: str,
+    model_name: str,
+    metrics: dict,
+    hyperparams: dict,
+    comment: str,
+) -> None:
+    """Append one run entry to the xlsx performance tracker.
+
+    Each call adds a new row — intermediate and failed runs are recorded too.
+    The row includes an auto-incremented Run #, timestamp, model name,
+    all hyperparams (epochs, batch_size, n_components, etc.), metrics, and comment.
+
+    Args:
+        xlsx_path:   path to report/model_performance_tracker.xlsx
+        model_name:  e.g. "SVD Collaborative Filtering"
+        metrics:     dict with hit_rate, precision, recall (from evaluate())
+        hyperparams: dict — keys match tracker columns (split, min_ratings,
+                     n_recommendations, epochs, batch_size, patience, embed_dim,
+                     n_components, train_users). Missing keys default to "N/A".
+        comment:     free-text note about what changed / why this run was done
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    NA = "N/A"
+    row_data = [
+        None,           # Run # — filled below after reading current max
+        timestamp,
+        model_name,
+        hyperparams.get("split",             "leave-one-out"),
+        hyperparams.get("min_ratings",       5),
+        hyperparams.get("n_recommendations", 10),
+        hyperparams.get("epochs",            NA),
+        hyperparams.get("batch_size",        NA),
+        hyperparams.get("patience",          NA),
+        hyperparams.get("embed_dim",         NA),
+        hyperparams.get("n_components",      NA),
+        hyperparams.get("train_users",       NA),
+        metrics.get("hit_rate",  0.0),
+        metrics.get("precision", 0.0),
+        metrics.get("recall",    0.0),
+        comment,
+    ]
+    headers = [
+        "Run #", "Timestamp", "Model", "Split",
+        "min_ratings", "n_recommendations",
+        "epochs", "batch_size", "patience", "embed_dim", "n_components", "train_users",
+        "Hit Rate @10", "Precision @10", "Recall @10",
+        "What changed / Comment",
+    ]
+    # read current max run number before appending
+    from openpyxl import load_workbook
+    wb = load_workbook(xlsx_path)
+    ws = wb.active
+    max_run = 0
+    for r in range(2, ws.max_row + 1):
+        val = ws.cell(r, 1).value
+        if isinstance(val, (int, float)):
+            max_run = max(max_run, int(val))
+    row_data[0] = max_run + 1
+    wb.close()
+
+    append_to_tracker(xlsx_path, row_data, headers)
 
 
 def append_to_tracker(xlsx_path: str, row_data: list, headers: list) -> None:

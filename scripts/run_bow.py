@@ -6,7 +6,7 @@ import pandas as pd
 from src.data_work.data_loader import load_anime_data, load_rating_data
 from src.models.baseline import split_train_test
 from src.models.bow import build_bow_matrix, recommend_bow
-from src.models.evaluator import evaluate, append_to_tracker
+from src.models.evaluator import evaluate, log_run
 
 # --- load & split ---
 ratings_df = load_rating_data("data/rating_clean.csv")
@@ -35,16 +35,14 @@ print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
 
-# --- write to model performance tracker ---
-HEADERS = [
-    "Model", "min_ratings", "test_ratio", "n_recommendations",
-    "m (percentile)", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"
-]
-row_data = [
+# --- record run in tracker ---
+# Edit COMMENT before each run to describe what changed.
+COMMENT = "Content-based. Genre BoW, L2-normalised, dot-product cosine. Weighted by user rating."
+log_run(
+    "report/model_performance_tracker.xlsx",
     "BoW + Cosine Similarity",
-    5, "leave-one-out", 10, "N/A",
-    metrics["hit_rate"], metrics["precision"], metrics["recall"],
-    "Content-based. Genre BoW vectors, cosine similarity weighted by user rating. No collaborative signal."
-]
-append_to_tracker("report/model_performance_tracker.xlsx", row_data, HEADERS)
+    metrics,
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10},
+    COMMENT,
+)
 print("✅ Results written to report/model_performance_tracker.xlsx")

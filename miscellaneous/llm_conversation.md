@@ -1222,3 +1222,104 @@ SVD's lead is genuine — it trains on all 60K users × 9.9K anime and learns co
 4. **Evaluator divide-by-zero** (`src/models/evaluator.py`): `sum(hits) / len(hits)` would raise `ZeroDivisionError` on an empty test set. Added early return `{"hit_rate": 0.0, "precision": 0.0, "recall": 0.0}` when `hits` is empty.
 
 ---
+
+### User: accidentally reverted run_autoencoder.py
+
+**Bob:** File was deleted by the undo. Recreated `scripts/run_autoencoder.py` with all current changes: shared eval sample from `data/eval_users.csv`, `leave-one-out` label in tracker, 10K training user subsample, correct `recommend_fn` passing `train_sub`.
+
+---
+
+### User: not recording incremental model development history — no log of failed attempts, hyperparameter changes, what changed/fixed each run
+
+**Bob:** Created `report/model_development_log.md` — a full retrospective development log covering all 6 models. Each model section records: every attempt in order, what changed, the bug or reason, and the resulting metrics. Also covers evaluation protocol evolution (v1 70/30 → v2 leave-one-out → v3 shared sample).
+
+Added `log_run(log_path, model_name, metrics, hyperparams, comment)` to `src/models/evaluator.py` — appends a timestamped markdown entry to the log after each run. All future runs of the scripts can call this to keep the log current automatically.
+
+---
+
+### User: model_performance_tracker.xlsx was created for that exact purpose
+
+**Bob:** Correct — the xlsx tracker is the right home for the run history. Removed `report/model_development_log.md`. Instead:
+
+1. **Rebuilt the tracker** with all 15 historical runs (6 final + 9 intermediate/buggy), adding columns: `Run #`, `Timestamp`, `Split`, `epochs`, `batch_size`, `patience`, `embed_dim`, `n_components`, `train_users`, `What changed / Comment`. Orange rows = intermediate/failed, green = final. Header row frozen.
+
+2. **Rewrote `log_run()`** in `src/models/evaluator.py` — now appends directly to the xlsx tracker (not markdown). Auto-increments `Run #`, adds timestamp, maps hyperparams dict keys to tracker columns, defaults missing keys to `"N/A"`. Usage: `log_run(xlsx_path, model_name, metrics, hyperparams_dict, comment)`.
+
+---
+
+### User: is it possible to recreate the development history of the models?
+
+**Bob:** Partially — but not fully. Assessment:
+
+**Accurately reconstructable:**
+- Final hyperparameters (in run scripts)
+- Bugs fixed and why (conversation log + tracker comments)
+- Evaluation protocol changes and their metrics (real numbers)
+- The full BoW overflow saga — the conversation log captured 5 distinct attempts
+
+**Genuinely lost:**
+- Metrics from runs that crashed (BoW attempts 1–4 produced no numbers — they either hung or threw exceptions)
+- Any hyperparameter experiments that were never tried (we never varied n_components, embed_dim, etc.)
+- Exact timestamps
+
+**What was done:** cross-referenced the conversation log for the BoW saga (5 attempts, not 2 as previously recorded) and rebuilt the tracker with 18 rows (12 intermediate/buggy orange + 6 final green). The comment column on each row now tells the story of what changed and why.
+
+The lesson: `log_run()` should have been called after every evaluation — including the ones that failed with `None` metrics and a "BUG:" comment. That would have given a complete live record.
+
+---
+
+## Session 3
+
+---
+
+### User: acquaint yourself with the whole project. Important is every conversation entry is logged inside llm_conversation.md
+
+**Bob:** Read every source file in the project. Here's the full picture:
+
+**Project: Anime Recommendation System** — university Deep Learning project, built with Python.
+
+**Dataset:** CooperUnion anime-recommendations-database (Kaggle)
+- `data/anime.csv` → `anime_id, name, genre, type, episodes, rating, members` (~12K titles)
+- `data/rating.csv` → `user_id, anime_id, rating` (~7M rows; -1 = watched but not rated)
+- Cleaned versions: `data/anime_clean.csv`, `data/rating_clean.csv`
+- Split: `data/train.csv` (6.26M rows), `data/test.csv` (60,970 rows — leave-one-out, 1 per user)
+- Shared eval sample: `data/eval_users.csv` (1000 users, seed=42)
+
+**Source layout:**
+
+| Path | Role |
+|---|---|
+| `src/data_work/data_loader.py` | `load_anime_data()`, `load_rating_data()` |
+| `src/data_work/data_cleaner.py` | `clean_anime_data()`, `clean_rating_data()`, `save_dataframe()` |
+| `src/data_work/data_analyzer.py` | EDA functions (counts, genres, top-10s, brackets) |
+| `src/models/baseline.py` | Bayesian popularity model; `split_train_test()`, `compute_bayesian_scores()`, `recommend_popular_anime()` |
+| `src/models/bow.py` | Genre Bag-of-Words + cosine similarity (L2-normalised, float32) |
+| `src/models/tfidf.py` | Genre TF-IDF + cosine similarity (same pattern) |
+| `src/models/svd.py` | `TruncatedSVD` collaborative filtering; `train_svd()` returns `(recon_df, Vt, cols)`, `fold_in_user()` for live inference |
+| `src/models/autoencoder.py` | PyTorch `AnimeAutoencoder` — Input→Dense128,ReLU→Dense32,ReLU→Dense128,ReLU→Sigmoid; masked MSE |
+| `src/models/ncf.py` | PyTorch `NCF` — user+anime embeddings (32d) concat→Dense64→Dense32→1; `find_proxy_user()` for new users |
+| `src/models/evaluator.py` | `evaluate()` (Hit Rate/Precision/Recall @K), `log_run()` (appends to xlsx tracker) |
+| `app/streamlit_app.py` | 3-tab Streamlit UI: Data Analysis, Model Comparison, Live Recommender (all 6 models side-by-side) |
+| `scripts/` | Standalone run scripts for each model + `clean_data.py`, `analyze_data.py`, `visualize_data.py`, `split_data.py`, `generate_inspection_report.py` |
+| `tests/` | BDD-style `unittest` tests (`test_when_..._then_...`) for data work and all models |
+| `report/manual_inspection.txt` | 5 sampled users × 6 models — training favourites, recommendations, hidden test items, hits |
+| `report/model_performance_tracker.xlsx` | Full run history (18 rows, 12 intermediate orange + 6 final green) |
+| `miscellaneous/action_plan.md` | Assignment requirements + research sources (Bulgarian) |
+
+**Evaluation protocol (final):** Leave-one-out, 1000 shared users (`eval_users.csv`), @K=10.
+
+**Final model metrics (Hit Rate @10):**
+| Model | Hit Rate |
+|---|---|
+| Baseline (Bayesian popularity) | 0.032 |
+| BoW + Cosine | 0.015 |
+| TF-IDF + Cosine | 0.020 |
+| SVD (n_components=50) | 0.298 |
+| Autoencoder (10K users) | 0.014 |
+| NCF (embed_dim=32) | 0.010 |
+
+SVD is the best model — only one doing full collaborative filtering over all 60K users × 9.9K anime. AE/NCF underperform due to limited training users and no negative sampling. Content-based models (BoW/TF-IDF) are below baseline because genre overlap alone is a weak personalisation signal.
+
+Fully up to speed. Will continue recording every exchange here automatically.
+
+---

@@ -9,7 +9,7 @@ import numpy as np
 
 # ── page config ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Anime Recommender",
+    page_title="Аниме Препоръки",
     page_icon="🎌",
     layout="wide",
 )
@@ -160,9 +160,9 @@ def _add_synthetic_user(train_df: pd.DataFrame, picks: list[dict]) -> pd.DataFra
 
 # ── tabs ─────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3 = st.tabs([
-    "📊 Data Analysis",
-    "📈 Model Comparison",
-    "🎌 Live Recommender",
+    "📊 Анализ на данните",
+    "📈 Сравнение на модели",
+    "🎌 Препоръки на живо",
 ])
 
 
@@ -170,13 +170,13 @@ tab1, tab2, tab3 = st.tabs([
 # TAB 1 — Data Analysis
 # ════════════════════════════════════════════════════════════════════════════
 with tab1:
-    st.header("Data Analysis")
+    st.header("Анализ на данните")
     st.markdown(
-        "Interactive EDA reports generated from the cleaned CooperUnion dataset "
-        "(~12 K anime, ~7 M ratings)."
+        "Интерактивни EDA репорти, генерирани от почистения CooperUnion датасет "
+        "(~12 хил. аниме, ~7 млн. оценки)."
     )
 
-    sub1, sub2 = st.tabs(["Anime", "Ratings"])
+    sub1, sub2 = st.tabs(["Аниме", "Оценки"])
 
     with sub1:
         if os.path.exists(ANIME_HTML):
@@ -184,7 +184,7 @@ with tab1:
                 html_content = f.read()
             st.components.v1.html(html_content, height=900, scrolling=True)
         else:
-            st.warning("anime_analysis.html not found — run `scripts/visualize_data.py` first.")
+            st.warning("anime_analysis.html не е намерен — изпълнете `scripts/visualize_data.py` първо.")
 
     with sub2:
         if os.path.exists(RATINGS_HTML):
@@ -192,20 +192,20 @@ with tab1:
                 html_content = f.read()
             st.components.v1.html(html_content, height=900, scrolling=True)
         else:
-            st.warning("ratings_analysis.html not found — run `scripts/visualize_data.py` first.")
+            st.warning("ratings_analysis.html не е намерен — изпълнете `scripts/visualize_data.py` първо.")
 
 
 # ════════════════════════════════════════════════════════════════════════════
 # TAB 2 — Model Comparison
 # ════════════════════════════════════════════════════════════════════════════
 with tab2:
-    st.header("Model Comparison")
-    st.markdown("Metrics evaluated on a 1 000-user random sample, Hit Rate / Precision / Recall @10.")
+    st.header("Сравнение на модели")
+    st.markdown("Метрики, изчислени върху произволна извадка от 1 000 потребители — Hit Rate / Precision / Recall @10.")
 
     tracker = load_tracker()
 
     # ── metrics table ────────────────────────────────────────────────────────
-    st.subheader("Results table")
+    st.subheader("Таблица с резултати")
     metric_cols = ["Model", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"]
     available   = [c for c in metric_cols if c in tracker.columns]
     st.dataframe(
@@ -221,7 +221,7 @@ with tab2:
     )
 
     # ── bar charts ───────────────────────────────────────────────────────────
-    st.subheader("Visual comparison")
+    st.subheader("Визуално сравнение")
     chart_metrics = [c for c in ["Hit Rate @10", "Precision @10", "Recall @10"]
                      if c in tracker.columns]
 
@@ -237,10 +237,10 @@ with tab2:
 # TAB 3 — Live Recommender
 # ════════════════════════════════════════════════════════════════════════════
 with tab3:
-    st.header("Live Recommender")
+    st.header("Препоръки на живо")
     st.markdown(
-        "Pick **3 anime** you have watched and rate each one (1–10). "
-        "All five models will recommend 10 anime for you side by side."
+        "Изберете **3 аниме**, които сте гледали, и ги оценете (1–10). "
+        "Всички модели ще ви препоръчат по 10 аниме един до друг."
     )
 
     anime_df = load_anime()
@@ -290,14 +290,14 @@ with tab3:
     """, height=0)
 
     # ── selection (outside any form so search rerenders live) ────────────────
-    st.subheader("Your 3 anime picks")
+    st.subheader("Вашите 3 аниме")
     picks = []
     for i in range(1, 4):
-        st.markdown(f"**Anime #{i}**")
+        st.markdown(f"**Аниме #{i}**")
         col_search, col_match, col_rating = st.columns([2, 2, 1])
         with col_search:
             query = st.text_input(
-                "Search",
+                "Търсене",
                 value="",
                 placeholder=default_names[i - 1],
                 key=f"search_{i}",
@@ -305,13 +305,13 @@ with tab3:
         with col_match:
             options = _filtered(query)
             name = st.selectbox(
-                "Best match",
+                "Най-добро съвпадение",
                 options=options,
                 key=f"pick_{i}",
             )
         with col_rating:
             rating = st.slider(
-                "Rating",
+                "Оценка",
                 min_value=1, max_value=10, value=7,
                 key=f"rating_{i}",
             )
@@ -319,26 +319,26 @@ with tab3:
         picks.append({"name": resolved, "anime_id": name_to_id.get(resolved), "rating": rating})
 
     with st.form("picker_form"):
-        submitted = st.form_submit_button("🔍 Get Recommendations", width="stretch")
+        submitted = st.form_submit_button("🔍 Вземи препоръки", width="stretch")
 
     if submitted:
         # validate — no duplicate picks, no missing IDs
         ids_chosen = [p["anime_id"] for p in picks if p["anime_id"] is not None]
         if len(set(ids_chosen)) < 3:
-            st.error("Please pick 3 **different** anime.")
+            st.error("Моля, изберете 3 **различни** аниме.")
             st.stop()
 
         train_df = load_train()
         uid, augmented_train = _add_synthetic_user(train_df, picks)
 
         st.markdown("---")
-        st.subheader(f"Top-10 recommendations for your profile")
+        st.subheader("Топ-10 препоръки за вашия профил")
 
         # ── display helper ────────────────────────────────────────────────────
         def show_recs(df: pd.DataFrame, score_col: str):
             """Display recommendations — merges name/genre only if not already present."""
             if df.empty:
-                st.warning("No recommendations returned.")
+                st.warning("Няма върнати препоръки.")
                 return
             # BoW/TF-IDF already include name+genre; SVD/baseline/AE do not
             if "name" not in df.columns:
@@ -347,10 +347,10 @@ with tab3:
                     on="anime_id", how="left"
                 )
             if score_col not in df.columns:
-                st.warning(f"No recommendations returned (missing score column: {score_col}).")
+                st.warning(f"Няма върнати препоръки (липсва колона: {score_col}).")
                 return
             display = df[["name", "genre", score_col]].rename(
-                columns={score_col: "score", "name": "Title", "genre": "Genres"}
+                columns={score_col: "score", "name": "Заглавие", "genre": "Жанрове"}
             )
             display["score"] = display["score"].round(4)
             st.dataframe(display, width="stretch", hide_index=True)
@@ -361,7 +361,7 @@ with tab3:
         # 1. Baseline
         with model_cols[0]:
             st.markdown("**Baseline**")
-            with st.spinner("Running…"):
+            with st.spinner("Зареждане…"):
                 from src.models.baseline import compute_bayesian_scores, recommend_popular_anime
                 scores_df = compute_bayesian_scores(augmented_train)
                 recs = recommend_popular_anime(scores_df, augmented_train, user_id=uid, n=10)
@@ -370,7 +370,7 @@ with tab3:
         # 2. BoW
         with model_cols[1]:
             st.markdown("**BoW**")
-            with st.spinner("Running…"):
+            with st.spinner("Зареждане…"):
                 from src.models.bow import recommend_bow
                 bow_matrix = get_bow_matrix()
                 recs = recommend_bow(uid, augmented_train, bow_matrix, anime_df, n=10)
@@ -379,7 +379,7 @@ with tab3:
         # 3. TF-IDF
         with model_cols[2]:
             st.markdown("**TF-IDF**")
-            with st.spinner("Running…"):
+            with st.spinner("Зареждане…"):
                 from src.models.tfidf import recommend_tfidf
                 tfidf_matrix = get_tfidf_matrix()
                 recs = recommend_tfidf(uid, augmented_train, tfidf_matrix, anime_df, n=10)
@@ -388,7 +388,7 @@ with tab3:
         # 4. SVD — fold new user into cached Vt (no retraining)
         with model_cols[3]:
             st.markdown("**SVD**")
-            with st.spinner("Running…"):
+            with st.spinner("Зареждане…"):
                 from src.models.svd import fold_in_user
                 _, Vt, anime_cols = get_svd()
                 recs = fold_in_user(picks, Vt, anime_cols, n=10)
@@ -396,8 +396,8 @@ with tab3:
 
         # 5. Autoencoder — forward-pass new user vector through cached model
         with model_cols[4]:
-            st.markdown("**Autoencoder**")
-            with st.spinner("Running…"):
+            st.markdown("**Автоенкодер**")
+            with st.spinner("Зареждане…"):
                 from src.models.autoencoder import recommend_autoencoder
                 ae_model, ae_matrix = get_autoencoder()
                 # build a one-row sparse vector aligned to the cached ae_matrix columns
@@ -412,7 +412,7 @@ with tab3:
         # 6. NCF — proxy user approach for new profiles
         with model_cols[5]:
             st.markdown("**NCF**")
-            with st.spinner("Running…"):
+            with st.spinner("Зареждане…"):
                 from src.models.ncf import recommend_ncf, find_proxy_user
                 model_ncf, user_map, anime_map = get_ncf()
                 picked_ids = [p["anime_id"] for p in picks if p["anime_id"] is not None]
@@ -421,5 +421,5 @@ with tab3:
                     proxy_id, model_ncf, user_map, anime_map, train_df,
                     n=10, exclude_ids=set(picked_ids),
                 )
-                st.caption(f"*proxy user: {proxy_id}*")
+                st.caption(f"*прокси потребител: {proxy_id}*")
                 show_recs(recs, "predicted_rating")

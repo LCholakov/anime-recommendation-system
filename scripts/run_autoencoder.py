@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 from src.data_work.data_loader import load_anime_data
 from src.models.autoencoder import build_user_item_matrix, train_autoencoder, recommend_autoencoder
-from src.models.evaluator import evaluate, append_to_tracker
+from src.models.evaluator import evaluate, log_run
 
 SEED         = 42
 TRAIN_USERS  = 10000   # subsample for tractable matrix size
@@ -56,17 +56,21 @@ print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
 
-# --- write to model performance tracker ---
-HEADERS = [
-    "Model", "min_ratings", "test_ratio", "n_recommendations",
-    "m (percentile)", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"
-]
-row_data = [
+# --- record run in tracker ---
+# Edit COMMENT before each run to describe what changed.
+COMMENT = (
+    f"Dense 128→32→128, Sigmoid, masked MSE. "
+    f"epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, train_users={TRAIN_USERS}."
+)
+log_run(
+    "report/model_performance_tracker.xlsx",
     "Autoencoder",
-    5, "leave-one-out", 10, "N/A",
-    metrics["hit_rate"], metrics["precision"], metrics["recall"],
-    f"Collaborative AE. Dense 128→32→128, Sigmoid output, masked MSE loss. "
-    f"Adam, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, train_users={TRAIN_USERS}."
-]
-append_to_tracker("report/model_performance_tracker.xlsx", row_data, HEADERS)
+    metrics,
+    {
+        "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
+        "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
+        "train_users": TRAIN_USERS,
+    },
+    COMMENT,
+)
 print("✅ Results written to report/model_performance_tracker.xlsx")

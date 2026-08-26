@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 from src.data_work.data_loader import load_anime_data
 from src.models.svd import build_user_item_matrix, train_svd, recommend_svd
-from src.models.evaluator import evaluate, append_to_tracker
+from src.models.evaluator import evaluate, log_run
 
 # --- load data ---
 anime_df = load_anime_data("data/anime_clean.csv")
@@ -35,16 +35,14 @@ print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
 
-# --- write to model performance tracker ---
-HEADERS = [
-    "Model", "min_ratings", "test_ratio", "n_recommendations",
-    "m (percentile)", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"
-]
-row_data = [
+# --- record run in tracker ---
+# Edit COMMENT before each run to describe what changed.
+COMMENT = f"Collaborative filtering. TruncatedSVD n_components={N_COMPONENTS}. Factorises user-item rating matrix."
+log_run(
+    "report/model_performance_tracker.xlsx",
     "SVD Collaborative Filtering",
-    5, "leave-one-out", 10, "N/A",
-    metrics["hit_rate"], metrics["precision"], metrics["recall"],
-    f"Collaborative filtering. TruncatedSVD n_components={N_COMPONENTS}. Factorises user-item rating matrix."
-]
-append_to_tracker("report/model_performance_tracker.xlsx", row_data, HEADERS)
+    metrics,
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10, "n_components": N_COMPONENTS},
+    COMMENT,
+)
 print("✅ Results written to report/model_performance_tracker.xlsx")

@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import torch
 from src.models.ncf import train_ncf, recommend_ncf
-from src.models.evaluator import evaluate, append_to_tracker
+from src.models.evaluator import evaluate, log_run
 
 SEED       = 42
 EPOCHS     = 20
@@ -46,17 +46,21 @@ print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
 
-# --- write to model performance tracker ---
-HEADERS = [
-    "Model", "min_ratings", "test_ratio", "n_recommendations",
-    "m (percentile)", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"
-]
-row_data = [
-    "NCF (Neural Collaborative Filtering)",
-    5, "leave-one-out", 10, "N/A",
-    metrics["hit_rate"], metrics["precision"], metrics["recall"],
+# --- record run in tracker ---
+# Edit COMMENT before each run to describe what changed.
+COMMENT = (
     f"User+anime embeddings ({EMBED_DIM}d), concat→Dense64→Dense32→1. "
-    f"MSE loss, Adam, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}."
-]
-append_to_tracker("report/model_performance_tracker.xlsx", row_data, HEADERS)
+    f"MSE loss, Adam. epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}."
+)
+log_run(
+    "report/model_performance_tracker.xlsx",
+    "NCF (Neural Collaborative Filtering)",
+    metrics,
+    {
+        "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
+        "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
+        "embed_dim": EMBED_DIM,
+    },
+    COMMENT,
+)
 print("✅ Results written to report/model_performance_tracker.xlsx")
