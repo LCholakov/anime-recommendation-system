@@ -4,3 +4,4 @@ pandas==2.3.3
 pytest==8.4.2
 scikit-learn==1.6.1
 torch==2.8.0
+streamlit==1.50.0

@@ -57,12 +57,14 @@ def recommend_bow(
         return pd.DataFrame(columns=["anime_id", "bow_score", "name", "genre"])
 
     # rows already unit-normalised — dot product == cosine similarity
-    user_vecs   = bow_matrix.loc[valid["anime_id"]].values         # (n_rated, features)
-    ratings_arr = valid["rating"].values.astype(np.float64)        # (n_rated,)
-    all_vecs    = bow_matrix.values                                 # (n_anime, features)
+    # use float32 to avoid overflow on large matrices
+    user_vecs   = bow_matrix.loc[valid["anime_id"]].values.astype(np.float32)  # (n_rated, features)
+    ratings_arr = valid["rating"].values.astype(np.float32)                    # (n_rated,)
+    all_vecs    = bow_matrix.values.astype(np.float32)                         # (n_anime, features)
 
     sims     = user_vecs @ all_vecs.T                              # (n_rated, n_anime)
     weighted = (sims * ratings_arr[:, np.newaxis]).sum(axis=0)     # (n_anime,)
+    weighted = np.nan_to_num(weighted, nan=0.0, posinf=0.0, neginf=0.0)
 
     score_series = pd.Series(weighted, index=bow_matrix.index)
     score_series = score_series.drop(index=[i for i in rated_ids if i in score_series.index])
