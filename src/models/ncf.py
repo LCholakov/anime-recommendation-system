@@ -98,6 +98,21 @@ def train_ncf(
     return model, user_map, anime_map
 
 
+def find_proxy_user(
+    picked_ids: list,
+    user_map: dict,
+    train_df: pd.DataFrame,
+) -> int:
+    """Return the existing user_id with the most overlap with picked_ids."""
+    picked = set(picked_ids)
+    user_anime = train_df[train_df["anime_id"].isin(picked)].groupby("user_id")["anime_id"].apply(set)
+    if user_anime.empty:
+        # fall back to any known user
+        return next(iter(user_map))
+    overlap = user_anime.apply(lambda s: len(s & picked))
+    return int(overlap.idxmax())
+
+
 def recommend_ncf(
     user_id: int,
     model: NCF,
@@ -105,12 +120,14 @@ def recommend_ncf(
     anime_map: dict,
     train_df: pd.DataFrame,
     n: int = 10,
+    exclude_ids: set = None,
 ) -> pd.DataFrame:
     if user_id not in user_map:
         return pd.DataFrame(columns=["anime_id", "predicted_rating"])
 
-    rated_ids    = set(train_df[train_df["user_id"] == user_id]["anime_id"])
-    candidate_ids = [aid for aid in anime_map if aid not in rated_ids]
+    rated_ids     = set(train_df[train_df["user_id"] == user_id]["anime_id"])
+    excluded      = rated_ids | (exclude_ids or set())
+    candidate_ids = [aid for aid in anime_map if aid not in excluded]
     if not candidate_ids:
         return pd.DataFrame(columns=["anime_id", "predicted_rating"])
 

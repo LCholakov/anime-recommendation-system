@@ -221,3 +221,12 @@ data/*.csv
 
 # Excel temp/lock files
 ~$*.xlsx
+# Excel backup files
+*.xlsx.bak
+
+# Trained model artifacts (large binaries, reproducible via scripts)
+model/*.pkl
+model/*.pt
+
+# Keep shared eval sample tracked despite data/*.csv rule
+!data/eval_users.csv

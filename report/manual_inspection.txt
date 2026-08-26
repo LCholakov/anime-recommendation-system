@@ -1,6 +1,6 @@
 ======================================================================
-BASELINE MODEL — MANUAL INSPECTION REPORT
-Seed: 42 | Users sampled: 5 | Recommendations: 10
+ALL-MODELS MANUAL INSPECTION REPORT
+Seed: 42 | Users sampled: 5 | Recommendations per model: 10
 ======================================================================
 
 User 68623
@@ -12,40 +12,98 @@ Training favourites (top 5 by rating):
   [10.0] Byousoku 5 Centimeter
   [10.0] Gosick
 
-Recommendations:
-   1. Hunter x Hunter (2011) (score: 9.118) 
-   2. Clannad: After Story (score: 9.107) 
-   3. Kimi no Na wa. (score: 9.039) 
-   4. Gintama (score: 9.032) 
-   5. Gintama&#039; (score: 9.004) 
-   6. Shigatsu wa Kimi no Uso (score: 8.905) 
-   7. Sen to Chihiro no Kamikakushi (score: 8.897) 
-   8. Tengen Toppa Gurren Lagann (score: 8.895) 
-   9. Gintama&#039;: Enchousen (score: 8.891) 
-  10. Code Geass: Hangyaku no Lelouch (score: 8.884) ✓ HIT
+  [Baseline]  hits: 1/19
+     1. Hunter x Hunter (2011) (score: 9.1178)
+     2. Clannad: After Story (score: 9.1073)
+     3. Kimi no Na wa. (score: 9.0387)
+     4. Gintama (score: 9.0315)
+     5. Gintama' (score: 9.0038)
+     6. Shigatsu wa Kimi no Uso (score: 8.9045)
+     7. Sen to Chihiro no Kamikakushi (score: 8.8973)
+     8. Tengen Toppa Gurren Lagann (score: 8.8952)
+     9. Gintama': Enchousen (score: 8.8913)
+    10. Code Geass: Hangyaku no Lelouch (score: 8.8842) ✓
 
-Hidden relevant titles (test set):
-  [ 5.0] Brothers Conflict — ✗ missed
-  [ 9.0] Code Geass: Boukoku no Akito 2 - Hikisakareshi Yokuryuu Picture Drama — ✗ missed
-  [ 4.0] Trigun — ✗ missed
-  [10.0] Angel Beats!: Another Epilogue — ✗ missed
-  [ 8.0] D.N.Angel — ✗ missed
-  [ 8.0] Diabolik Lovers More,Blood — ✗ missed
-  [10.0] Death Note — ✗ missed
-  [ 8.0] Ouran Koukou Host Club — ✗ missed
-  [ 9.0] Code Geass: Boukoku no Akito 4 - Nikushimi no Kioku Kara Picture Drama — ✗ missed
-  [ 9.0] Kara no Kyoukai 7: Satsujin Kousatsu (Kou) — ✗ missed
-  [10.0] Angel Beats! — ✗ missed
-  [10.0] Cossette no Shouzou — ✗ missed
-  [10.0] Angel Beats! Specials — ✗ missed
-  [10.0] Nana — ✗ missed
-  [10.0] Darker than Black: Ryuusei no Gemini — ✗ missed
-  [10.0] Evangelion: 2.0 You Can (Not) Advance — ✗ missed
-  [10.0] Ghost in the Shell — ✗ missed
-  [ 9.0] Code Geass: Hangyaku no Lelouch — ✓ found
-  [ 9.0] Code Geass: Boukoku no Akito 1 - Yokuryuu wa Maiorita — ✗ missed
+  [BoW]  hits: 0/19
+     1. Ankoku Shindenshou Takegami (score: 147.2770)
+     2. Asagiri no Miko (score: 144.4707)
+     3. Ark (score: 143.1525)
+     4. Zetman (score: 141.5813)
+     5. Aquarion Evol (score: 141.1129)
+     6. Aquarion Logos (score: 141.1129)
+     7. Concrete Revolutio: Choujin Gensou - The Last Song (score: 140.5598)
+     8. Concrete Revolutio: Choujin Gensou (score: 140.5598)
+     9. Nabari no Ou (score: 139.8066)
+    10. Mobile Suit Gundam 00 Special Edition (score: 138.8717)
 
-Hits: 1/19
+  [TF-IDF]  hits: 0/19
+     1. Berserk (score: 123.3528)
+     2. Berserk (2016) (score: 123.3528)
+     3. Ark (score: 123.0568)
+     4. Berserk: Ougon Jidai-hen III - Kourin (score: 120.2209)
+     5. Berserk: Ougon Jidai-hen II - Doldrey Kouryaku (score: 120.2209)
+     6. Code Geass: Soubou no Oz Picture Drama (score: 119.9125)
+     7. Ankoku Shindenshou Takegami (score: 117.4360)
+     8. Tsubasa Chronicle 2nd Season (score: 115.7467)
+     9. Asagiri no Miko (score: 115.3236)
+    10. Berserk: Ougon Jidai-hen I - Haou no Tamago (score: 115.2071)
+
+  [SVD]  hits: 3/19
+     1. Evangelion: 1.0 You Are (Not) Alone (score: 3.5532)
+     2. Mahou Shoujo Madoka★Magica (score: 3.5275)
+     3. Fullmetal Alchemist: The Conqueror of Shamballa (score: 3.3857)
+     4. Evangelion: 2.0 You Can (Not) Advance (score: 3.3709) ✓
+     5. Code Geass: Hangyaku no Lelouch (score: 2.8892) ✓
+     6. Darker than Black: Ryuusei no Gemini (score: 2.7728) ✓
+     7. K-On! (score: 2.6145)
+     8. Ergo Proxy (score: 2.6016)
+     9. Higurashi no Naku Koro ni (score: 2.4696)
+    10. Steins;Gate: Oukoubakko no Poriomania (score: 2.4459)
+
+  [Autoencoder]  hits: 0/19
+     1. Gintama° (score: 0.9951)
+     2. Koe no Katachi (score: 0.9939)
+     3. Kizumonogatari II: Nekketsu-hen (score: 0.9889)
+     4. Hanada Shounen-shi (score: 0.9888)
+     5. Kimi no Na wa. (score: 0.9868)
+     6. Hulu Xiongdi (score: 0.9867)
+     7. Shakotan★Boogie (score: 0.9864)
+     8. Gintama (score: 0.9821)
+     9. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 0.9811)
+    10. Gintama' (score: 0.9807)
+
+  [NCF]  hits: 0/19
+     1. Gintama° (score: 10.9407)
+     2. Kimi no Na wa. (score: 10.4601)
+     3. Gintama': Enchousen (score: 10.4163)
+     4. Ginga Eiyuu Densetsu (score: 10.3124)
+     5. Mushishi Zoku Shou (score: 10.2903)
+     6. Gintama' (score: 10.2687)
+     7. Rurouni Kenshin: Meiji Kenkaku Romantan - Tsuioku-hen (score: 10.2444)
+     8. Hajime no Ippo: Rising (score: 10.2350)
+     9. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 10.2281)
+    10. Clannad: After Story (score: 10.1970)
+
+  Hidden relevant titles (test set):
+    [ 5.0] Brothers Conflict
+    [ 9.0] Code Geass: Boukoku no Akito 2 - Hikisakareshi Yokuryuu Picture Drama
+    [ 4.0] Trigun
+    [10.0] Angel Beats!: Another Epilogue
+    [ 8.0] D.N.Angel
+    [ 8.0] Diabolik Lovers More,Blood
+    [10.0] Death Note
+    [ 8.0] Ouran Koukou Host Club
+    [ 9.0] Code Geass: Boukoku no Akito 4 - Nikushimi no Kioku Kara Picture Drama
+    [ 9.0] Kara no Kyoukai 7: Satsujin Kousatsu (Kou)
+    [10.0] Angel Beats!
+    [10.0] Cossette no Shouzou
+    [10.0] Angel Beats! Specials
+    [10.0] Nana
+    [10.0] Darker than Black: Ryuusei no Gemini
+    [10.0] Evangelion: 2.0 You Can (Not) Advance
+    [10.0] Ghost in the Shell
+    [ 9.0] Code Geass: Hangyaku no Lelouch
+    [ 9.0] Code Geass: Boukoku no Akito 1 - Yokuryuu wa Maiorita
 ======================================================================
 
 User 24722
@@ -57,42 +115,100 @@ Training favourites (top 5 by rating):
   [10.0] One Piece Film: Strong World Episode 0
   [10.0] Katekyo Hitman Reborn!
 
-Recommendations:
-   1. Steins;Gate (score: 9.212) 
-   2. Hunter x Hunter (2011) (score: 9.118) 
-   3. Clannad: After Story (score: 9.107) 
-   4. Kimi no Na wa. (score: 9.039) 
-   5. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
-   6. Shigatsu wa Kimi no Uso (score: 8.905) 
-   7. Sen to Chihiro no Kamikakushi (score: 8.897) 
-   8. Tengen Toppa Gurren Lagann (score: 8.895) 
-   9. Gintama&#039;: Enchousen (score: 8.891) ✓ HIT
-  10. Code Geass: Hangyaku no Lelouch (score: 8.884) 
+  [Baseline]  hits: 1/21
+     1. Steins;Gate (score: 9.2124)
+     2. Hunter x Hunter (2011) (score: 9.1178)
+     3. Clannad: After Story (score: 9.1073)
+     4. Kimi no Na wa. (score: 9.0387)
+     5. Code Geass: Hangyaku no Lelouch R2 (score: 9.0224)
+     6. Shigatsu wa Kimi no Uso (score: 8.9045)
+     7. Sen to Chihiro no Kamikakushi (score: 8.8973)
+     8. Tengen Toppa Gurren Lagann (score: 8.8952)
+     9. Gintama': Enchousen (score: 8.8913) ✓
+    10. Code Geass: Hangyaku no Lelouch (score: 8.8842)
 
-Hidden relevant titles (test set):
-  [10.0] Naruto Movie 2: Dai Gekitotsu! Maboroshi no Chiteiiseki Dattebayo! — ✗ missed
-  [ 8.0] Naruto — ✗ missed
-  [10.0] Mouretsu Pirates — ✗ missed
-  [10.0] Bleach — ✗ missed
-  [10.0] Naruto x UT — ✗ missed
-  [10.0] Bleach: Memories in the Rain — ✗ missed
-  [10.0] One Piece Movie 2: Nejimaki-jima no Daibouken — ✗ missed
-  [10.0] Bleach Movie 2: The DiamondDust Rebellion - Mou Hitotsu no Hyourinmaru — ✗ missed
-  [10.0] Densetsu no Yuusha no Densetsu — ✗ missed
-  [10.0] One Piece Movie 4: Dead End no Bouken — ✗ missed
-  [10.0] Naruto: Shippuuden Movie 1 — ✗ missed
-  [10.0] One Piece Movie 1 — ✗ missed
-  [10.0] Gintama&#039;: Enchousen — ✓ found
-  [10.0] Shakugan no Shana — ✗ missed
-  [10.0] Sword Art Online — ✗ missed
-  [10.0] Naruto: Dai Katsugeki!! Yuki Hime Shinobu Houjou Dattebayo! Special: Konoha Annual Sports Festival — ✗ missed
-  [10.0] Ao no Exorcist: Kuro no Iede — ✗ missed
-  [10.0] One Piece Film: Strong World — ✗ missed
-  [10.0] Naruto Soyokazeden Movie: Naruto to Mashin to Mitsu no Onegai Dattebayo!! — ✗ missed
-  [10.0] Bleach Movie 4: Jigoku-hen — ✗ missed
-  [10.0] Naruto: Takigakure no Shitou - Ore ga Eiyuu Dattebayo! — ✗ missed
+  [BoW]  hits: 1/21
+     1. One Piece (score: 260.4856)
+     2. One Piece: Episode of Merry - Mou Hitori no Nakama no Monogatari (score: 260.4856)
+     3. One Piece: Episode of Nami - Koukaishi no Namida to Nakama no Kizuna (score: 260.4856)
+     4. One Piece: Episode of Sabo - 3 Kyoudai no Kizuna Kiseki no Saikai to Uketsugareru Ishi (score: 260.4856)
+     5. One Piece: Episode of Luffy - Hand Island no Bouken (score: 260.1759)
+     6. One Piece Movie 4: Dead End no Bouken (score: 260.1759) ✓
+     7. One Piece: Adventure of Nebulandia (score: 260.1759)
+     8. One Piece: Umi no Heso no Daibouken-hen (score: 260.1759)
+     9. One Piece: Oounabara ni Hirake! Dekkai Dekkai Chichi no Yume! (score: 260.1759)
+    10. One Piece: Glorious Island (score: 260.1759)
 
-Hits: 1/21
+  [TF-IDF]  hits: 1/21
+     1. One Piece (score: 227.9930)
+     2. One Piece: Episode of Merry - Mou Hitori no Nakama no Monogatari (score: 227.9930)
+     3. One Piece: Episode of Nami - Koukaishi no Namida to Nakama no Kizuna (score: 227.9930)
+     4. One Piece: Episode of Sabo - 3 Kyoudai no Kizuna Kiseki no Saikai to Uketsugareru Ishi (score: 227.9930)
+     5. One Piece: Episode of Luffy - Hand Island no Bouken (score: 226.0946)
+     6. One Piece Movie 4: Dead End no Bouken (score: 226.0946) ✓
+     7. One Piece: Adventure of Nebulandia (score: 226.0946)
+     8. One Piece: Umi no Heso no Daibouken-hen (score: 226.0946)
+     9. One Piece: Oounabara ni Hirake! Dekkai Dekkai Chichi no Yume! (score: 226.0946)
+    10. One Piece: Glorious Island (score: 226.0946)
+
+  [SVD]  hits: 8/21
+     1. Bleach (score: 6.8038) ✓
+     2. Naruto (score: 6.6924) ✓
+     3. Bleach Movie 2: The DiamondDust Rebellion - Mou Hitotsu no Hyourinmaru (score: 6.6001) ✓
+     4. Naruto: Shippuuden Movie 1 (score: 5.9605) ✓
+     5. Naruto Movie 2: Dai Gekitotsu! Maboroshi no Chiteiiseki Dattebayo! (score: 4.9638) ✓
+     6. Bleach Movie 4: Jigoku-hen (score: 4.7064) ✓
+     7. Naruto: Shippuuden Movie 5 - Blood Prison (score: 4.1433)
+     8. Fate/stay night: Unlimited Blade Works (score: 3.7486)
+     9. Bleach: Memories in the Rain (score: 3.4248) ✓
+    10. One Piece Film: Strong World (score: 3.0133) ✓
+
+  [Autoencoder]  hits: 1/21
+     1. Gintama° (score: 0.9967)
+     2. Koe no Katachi (score: 0.9956)
+     3. Kimi no Na wa. (score: 0.9938)
+     4. Kizumonogatari II: Nekketsu-hen (score: 0.9920)
+     5. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 0.9903)
+     6. Hulu Xiongdi (score: 0.9898)
+     7. Hanada Shounen-shi (score: 0.9896)
+     8. Gintama': Enchousen (score: 0.9870) ✓
+     9. Gintama: Yorinuki Gintama-san on Theater 2D (score: 0.9869)
+    10. Shakotan★Boogie (score: 0.9858)
+
+  [NCF]  hits: 0/21
+     1. Rainbow: Nisha Rokubou no Shichinin (score: 11.1838)
+     2. Chuuzumou (score: 11.1615)
+     3. Hunter x Hunter (2011) (score: 11.1018)
+     4. Ginga Eiyuu Densetsu (score: 11.0622)
+     5. Gintama° (score: 11.0564)
+     6. Kimi no Na wa. (score: 11.0410)
+     7. Ping Pong The Animation (score: 11.0203)
+     8. Kara no Kyoukai 5: Mujun Rasen (score: 11.0012)
+     9. Aria The Origination: Sono Choppiri Himitsu no Basho ni... (score: 10.9829)
+    10. Ookami Kodomo no Ame to Yuki (score: 10.9769)
+
+  Hidden relevant titles (test set):
+    [10.0] Naruto Movie 2: Dai Gekitotsu! Maboroshi no Chiteiiseki Dattebayo!
+    [ 8.0] Naruto
+    [10.0] Mouretsu Pirates
+    [10.0] Bleach
+    [10.0] Naruto x UT
+    [10.0] Bleach: Memories in the Rain
+    [10.0] One Piece Movie 2: Nejimaki-jima no Daibouken
+    [10.0] Bleach Movie 2: The DiamondDust Rebellion - Mou Hitotsu no Hyourinmaru
+    [10.0] Densetsu no Yuusha no Densetsu
+    [10.0] One Piece Movie 4: Dead End no Bouken
+    [10.0] Naruto: Shippuuden Movie 1
+    [10.0] One Piece Movie 1
+    [10.0] Gintama': Enchousen
+    [10.0] Shakugan no Shana
+    [10.0] Sword Art Online
+    [10.0] Naruto: Dai Katsugeki!! Yuki Hime Shinobu Houjou Dattebayo! Special: Konoha Annual Sports Festival
+    [10.0] Ao no Exorcist: Kuro no Iede
+    [10.0] One Piece Film: Strong World
+    [10.0] Naruto Soyokazeden Movie: Naruto to Mashin to Mitsu no Onegai Dattebayo!!
+    [10.0] Bleach Movie 4: Jigoku-hen
+    [10.0] Naruto: Takigakure no Shitou - Ore ga Eiyuu Dattebayo!
 ======================================================================
 
 User 7630
@@ -104,37 +220,95 @@ Training favourites (top 5 by rating):
   [10.0] Sekaiichi Hatsukoi 2
   [10.0] Last Exile
 
-Recommendations:
-   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
-   2. Steins;Gate (score: 9.212) 
-   3. Hunter x Hunter (2011) (score: 9.118) 
-   4. Clannad: After Story (score: 9.107) 
-   5. Kimi no Na wa. (score: 9.039) 
-   6. Gintama (score: 9.032) 
-   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
-   8. Gintama&#039; (score: 9.004) 
-   9. Shigatsu wa Kimi no Uso (score: 8.905) 
-  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+  [Baseline]  hits: 0/16
+     1. Fullmetal Alchemist: Brotherhood (score: 9.2731)
+     2. Steins;Gate (score: 9.2124)
+     3. Hunter x Hunter (2011) (score: 9.1178)
+     4. Clannad: After Story (score: 9.1073)
+     5. Kimi no Na wa. (score: 9.0387)
+     6. Gintama (score: 9.0315)
+     7. Code Geass: Hangyaku no Lelouch R2 (score: 9.0224)
+     8. Gintama' (score: 9.0038)
+     9. Shigatsu wa Kimi no Uso (score: 8.9045)
+    10. Sen to Chihiro no Kamikakushi (score: 8.8973)
 
-Hidden relevant titles (test set):
-  [ 8.0] Seto no Hanayome — ✗ missed
-  [ 8.0] Blood+ — ✗ missed
-  [ 5.0] Okane ga Nai — ✗ missed
-  [ 5.0] Elfen Lied Special — ✗ missed
-  [ 7.0] Papa to Kiss in the Dark — ✗ missed
-  [ 7.0] Seitokaichou ni Chuukoku — ✗ missed
-  [ 8.0] Natsume Yuujinchou — ✗ missed
-  [ 9.0] Bishoujo Senshi Sailor Moon SuperS — ✗ missed
-  [ 8.0] Toradora! — ✗ missed
-  [ 6.0] Midori no Hibi — ✗ missed
-  [10.0] Sekaiichi Hatsukoi — ✗ missed
-  [ 6.0] Green Green — ✗ missed
-  [ 4.0] School Days — ✗ missed
-  [ 7.0] Myself; Yourself — ✗ missed
-  [ 8.0] Ninin ga Shinobuden — ✗ missed
-  [ 4.0] Nekojiru-sou — ✗ missed
+  [BoW]  hits: 0/16
+     1. Cardcaptor Sakura (score: 129.9436)
+     2. Cardcaptor Sakura Movie 2: Fuuin Sareta Card (score: 129.4540)
+     3. Bishoujo Senshi Sailor Moon S: Kaguya Hime no Koibito (score: 128.9746)
+     4. Bishoujo Senshi Sailor Moon: Sailor Stars - Hero Club (score: 128.9746)
+     5. Skip Beat! (score: 128.3104)
+     6. Kodomo no Omocha (TV) (score: 128.3104)
+     7. Marmalade Boy (score: 128.3104)
+     8. Aishiteruze Baby★★ (score: 128.3104)
+     9. Kirarin☆Revolution (score: 128.3104)
+    10. Good Morning Call (score: 126.5266)
 
-Hits: 0/16
+  [TF-IDF]  hits: 0/16
+     1. Cardcaptor Sakura (score: 110.3281)
+     2. Bishoujo Senshi Sailor Moon S: Kaguya Hime no Koibito (score: 108.2308)
+     3. Bishoujo Senshi Sailor Moon: Sailor Stars - Hero Club (score: 108.2308)
+     4. Cardcaptor Sakura Movie 2: Fuuin Sareta Card (score: 107.3458)
+     5. Mai-HiME (score: 105.8316)
+     6. Koisuru Tenshi Angelique: Kokoro no Mezameru Toki (score: 104.3436)
+     7. Wagamama☆Fairy Mirumo de Pon! (score: 104.2900)
+     8. D.N.Angel (score: 103.4983)
+     9. Hime-chan no Ribbon (score: 102.2814)
+    10. Kamichama Karin (score: 102.2814)
+
+  [SVD]  hits: 1/16
+     1. Sekaiichi Hatsukoi (score: 3.1995) ✓
+     2. Kuroshitsuji (score: 2.9278)
+     3. Highschool of the Dead (score: 2.8121)
+     4. Lovely★Complex (score: 2.0584)
+     5. Kuroshitsuji II (score: 1.9616)
+     6. Full Metal Panic! (score: 1.9495)
+     7. Cowboy Bebop (score: 1.8365)
+     8. Full Metal Panic? Fumoffu (score: 1.8278)
+     9. Dragon Ball Z (score: 1.7138)
+    10. No.6 (score: 1.6693)
+
+  [Autoencoder]  hits: 0/16
+     1. Gintama° (score: 0.9641)
+     2. Koe no Katachi (score: 0.9549)
+     3. Ginga Eiyuu Densetsu Gaiden: Rasen Meikyuu (score: 0.9385)
+     4. Ginga Eiyuu Densetsu (score: 0.9323)
+     5. Gintama (score: 0.9323)
+     6. Kizumonogatari II: Nekketsu-hen (score: 0.9299)
+     7. Gintama' (score: 0.9254)
+     8. Persona 3 the Movie 4: Winter of Rebirth (score: 0.9248)
+     9. Hunter x Hunter (2011) (score: 0.9247)
+    10. Shakotan★Boogie (score: 0.9229)
+
+  [NCF]  hits: 0/16
+     1. Aria The Origination (score: 9.9696)
+     2. Gintama' (score: 9.9101)
+     3. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 9.8294)
+     4. Ginga Eiyuu Densetsu (score: 9.7391)
+     5. Gintama (score: 9.6483)
+     6. Uchuu Kyoudai (score: 9.6147)
+     7. Hunter x Hunter (2011) (score: 9.6088)
+     8. Uchuu Senkan Yamato 2199 (score: 9.5580)
+     9. Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare (score: 9.5475)
+    10. Yojouhan Shinwa Taikei (score: 9.5402)
+
+  Hidden relevant titles (test set):
+    [ 8.0] Seto no Hanayome
+    [ 8.0] Blood+
+    [ 5.0] Okane ga Nai
+    [ 5.0] Elfen Lied Special
+    [ 7.0] Papa to Kiss in the Dark
+    [ 7.0] Seitokaichou ni Chuukoku
+    [ 8.0] Natsume Yuujinchou
+    [ 9.0] Bishoujo Senshi Sailor Moon SuperS
+    [ 8.0] Toradora!
+    [ 6.0] Midori no Hibi
+    [10.0] Sekaiichi Hatsukoi
+    [ 6.0] Green Green
+    [ 4.0] School Days
+    [ 7.0] Myself; Yourself
+    [ 8.0] Ninin ga Shinobuden
+    [ 4.0] Nekojiru-sou
 ======================================================================
 
 User 16900
@@ -146,33 +320,91 @@ Training favourites (top 5 by rating):
   [ 8.0] Daiakuji: The Xena Buster
   [ 8.0] Anata dake Konbanwa
 
-Recommendations:
-   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
-   2. Steins;Gate (score: 9.212) 
-   3. Hunter x Hunter (2011) (score: 9.118) 
-   4. Clannad: After Story (score: 9.107) 
-   5. Kimi no Na wa. (score: 9.039) 
-   6. Gintama (score: 9.032) 
-   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
-   8. Gintama&#039; (score: 9.004) 
-   9. Shigatsu wa Kimi no Uso (score: 8.905) 
-  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+  [Baseline]  hits: 0/12
+     1. Fullmetal Alchemist: Brotherhood (score: 9.2731)
+     2. Steins;Gate (score: 9.2124)
+     3. Hunter x Hunter (2011) (score: 9.1178)
+     4. Clannad: After Story (score: 9.1073)
+     5. Kimi no Na wa. (score: 9.0387)
+     6. Gintama (score: 9.0315)
+     7. Code Geass: Hangyaku no Lelouch R2 (score: 9.0224)
+     8. Gintama' (score: 9.0038)
+     9. Shigatsu wa Kimi no Uso (score: 8.9045)
+    10. Sen to Chihiro no Kamikakushi (score: 8.8973)
 
-Hidden relevant titles (test set):
-  [ 6.0] Akina to Onsen de H Shiyo! — ✗ missed
-  [ 9.0] Hatsu Inu 2 The Animation: Strange Kind of Woman - Again — ✗ missed
-  [ 8.0] Aneimo — ✗ missed
-  [ 7.0] Ane Jiru 2 The Animation: Shirakawa Sanshimai ni Omakase — ✗ missed
-  [ 7.0] Oni Chichi 2 — ✗ missed
-  [ 7.0] Brandish — ✗ missed
-  [ 7.0] Front Innocent: Mou Hitotsu no Lady Innocent — ✗ missed
-  [ 7.0] Accelerando: Datenshi-tachi no Sasayaki — ✗ missed
-  [ 7.0] Hitozuma♪Kasumi-san — ✗ missed
-  [ 8.0] Hi.Me.Go.To — ✗ missed
-  [ 7.0] Enbo — ✗ missed
-  [ 8.0] Cafe Junkie — ✗ missed
+  [BoW]  hits: 0/12
+     1. Oni Chichi: Re-born (score: 212.0300)
+     2. Mankitsu Happening (score: 212.0300)
+     3. Oni Chichi: Rebuild (score: 212.0300)
+     4. Eroge! H mo Game mo Kaihatsu Zanmai (score: 212.0300)
+     5. Oni Chichi: Re-birth (score: 212.0300)
+     6. Swing Out Sisters (2014) (score: 212.0300)
+     7. Maki-chan to Nau. (score: 212.0300)
+     8. Shoujo Ramune (score: 212.0300)
+     9. Fella Pure: Mitarashi-san Chi no Jijou The Animation (score: 212.0300)
+    10. Tsugou no Yoi Sexfriend? (score: 212.0300)
 
-Hits: 0/12
+  [TF-IDF]  hits: 0/12
+     1. Oni Chichi: Re-born (score: 210.1914)
+     2. Mankitsu Happening (score: 210.1914)
+     3. Oni Chichi: Rebuild (score: 210.1914)
+     4. Eroge! H mo Game mo Kaihatsu Zanmai (score: 210.1914)
+     5. Oni Chichi: Re-birth (score: 210.1914)
+     6. Swing Out Sisters (2014) (score: 210.1914)
+     7. Maki-chan to Nau. (score: 210.1914)
+     8. Shoujo Ramune (score: 210.1914)
+     9. Fella Pure: Mitarashi-san Chi no Jijou The Animation (score: 210.1914)
+    10. Tsugou no Yoi Sexfriend? (score: 210.1914)
+
+  [SVD]  hits: 0/12
+     1. Tokyo Ghoul (score: 0.2650)
+     2. Highschool of the Dead (score: 0.2473)
+     3. Kiss x Sis (TV) (score: 0.2235)
+     4. Highschool of the Dead: Drifters of the Dead (score: 0.2081)
+     5. Bakemonogatari (score: 0.2070)
+     6. B Gata H Kei (score: 0.1878)
+     7. Naruto (score: 0.1872)
+     8. Sekirei (score: 0.1620)
+     9. Yosuga no Sora: In Solitude, Where We Are Least Alone. (score: 0.1599)
+    10. Tokyo Ghoul √A (score: 0.1576)
+
+  [Autoencoder]  hits: 0/12
+     1. Koe no Katachi (score: 0.8684)
+     2. Gintama° (score: 0.8571)
+     3. Kimi no Na wa. (score: 0.8478)
+     4. Persona 3 the Movie 4: Winter of Rebirth (score: 0.8385)
+     5. Hulu Xiongdi (score: 0.8296)
+     6. Clannad: After Story (score: 0.8285)
+     7. Shakotan★Boogie (score: 0.8275)
+     8. Hanada Shounen-shi (score: 0.8225)
+     9. Kizumonogatari II: Nekketsu-hen (score: 0.8200)
+    10. Huyao Xiao Hongniang (score: 0.8187)
+
+  [NCF]  hits: 0/12
+     1. Gintama° (score: 10.0253)
+     2. Gintama': Enchousen (score: 9.8696)
+     3. Kimi no Na wa. (score: 9.8632)
+     4. Ping Pong The Animation (score: 9.8554)
+     5. Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare (score: 9.8003)
+     6. Ginga Eiyuu Densetsu (score: 9.7672)
+     7. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 9.7359)
+     8. Hidamari Sketch: Sae Hiro Sotsugyou-hen (score: 9.6734)
+     9. Gakuen Handsome: Legend of Sexy (score: 9.6652)
+    10. Haikyuu!! Second Season (score: 9.6530)
+
+  Hidden relevant titles (test set):
+    [ 6.0] Akina to Onsen de H Shiyo!
+    [ 9.0] Hatsu Inu 2 The Animation: Strange Kind of Woman - Again
+    [ 8.0] Aneimo
+    [ 7.0] Ane Jiru 2 The Animation: Shirakawa Sanshimai ni Omakase
+    [ 7.0] Oni Chichi 2
+    [ 7.0] Brandish
+    [ 7.0] Front Innocent: Mou Hitotsu no Lady Innocent
+    [ 7.0] Accelerando: Datenshi-tachi no Sasayaki
+    [ 7.0] Hitozuma♪Kasumi-san
+    [ 8.0] Hi.Me.Go.To
+    [ 7.0] Enbo
+    [ 8.0] Cafe Junkie
 ======================================================================
 
 User 3475
@@ -184,26 +416,84 @@ Training favourites (top 5 by rating):
   [ 9.0] Redline
   [ 9.0] Mahou Shoujo Madoka★Magica
 
-Recommendations:
-   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
-   2. Steins;Gate (score: 9.212) ✓ HIT
-   3. Hunter x Hunter (2011) (score: 9.118) 
-   4. Clannad: After Story (score: 9.107) 
-   5. Kimi no Na wa. (score: 9.039) 
-   6. Gintama (score: 9.032) 
-   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
-   8. Gintama&#039; (score: 9.004) 
-   9. Shigatsu wa Kimi no Uso (score: 8.905) 
-  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+  [Baseline]  hits: 1/7
+     1. Fullmetal Alchemist: Brotherhood (score: 9.2731)
+     2. Steins;Gate (score: 9.2124) ✓
+     3. Hunter x Hunter (2011) (score: 9.1178)
+     4. Clannad: After Story (score: 9.1073)
+     5. Kimi no Na wa. (score: 9.0387)
+     6. Gintama (score: 9.0315)
+     7. Code Geass: Hangyaku no Lelouch R2 (score: 9.0224)
+     8. Gintama' (score: 9.0038)
+     9. Shigatsu wa Kimi no Uso (score: 8.9045)
+    10. Sen to Chihiro no Kamikakushi (score: 8.8973)
 
-Hidden relevant titles (test set):
-  [ 8.0] Evangelion: 3.0 You Can (Not) Redo — ✗ missed
-  [ 9.0] Mahou Shoujo Madoka★Magica Movie 2: Eien no Monogatari — ✗ missed
-  [10.0] Neon Genesis Evangelion — ✗ missed
-  [ 9.0] Sakamichi no Apollon — ✗ missed
-  [ 5.0] Summer Wars — ✗ missed
-  [ 5.0] Toradora! — ✗ missed
-  [ 8.0] Steins;Gate — ✓ found
+  [BoW]  hits: 0/7
+     1. RahXephon: Pluralitas Concentio (score: 54.9477)
+     2. Ano Natsu de Matteru (score: 54.4976)
+     3. Ano Natsu de Matteru: Bokutachi wa Koukou Saigo no Natsu wo Sugoshinagara, Ano Natsu de Matteiru. (score: 54.4976)
+     4. Dennou Sentai Voogie's★Angel: Forever and Ever (score: 53.9209)
+     5. Aquarion Evol (score: 53.7358)
+     6. Aquarion Logos (score: 53.7358)
+     7. Urusei Yatsura Movie 2: Beautiful Dreamer (score: 53.6139)
+     8. Urusei Yatsura (score: 53.6139)
+     9. Urusei Yatsura Movie 5: Final (score: 53.6139)
+    10. Urusei Yatsura Movie 1: Only You (score: 53.6139)
 
-Hits: 1/7
+  [TF-IDF]  hits: 0/7
+     1. Ano Natsu de Matteru (score: 47.4888)
+     2. Ano Natsu de Matteru: Bokutachi wa Koukou Saigo no Natsu wo Sugoshinagara, Ano Natsu de Matteiru. (score: 47.4888)
+     3. RahXephon: Pluralitas Concentio (score: 47.2847)
+     4. Sakurasou no Pet na Kanojo (score: 44.7466)
+     5. Chuunibyou demo Koi ga Shitai! Ren: The Rikka Wars (score: 44.7466)
+     6. I My Me! Strawberry Eggs (score: 44.7466)
+     7. Aquarion Evol (score: 44.4979)
+     8. Aquarion Logos (score: 44.4979)
+     9. Code-E (score: 43.8105)
+    10. Little Busters!: Refrain (score: 43.7243)
+
+  [SVD]  hits: 2/7
+     1. Neon Genesis Evangelion (score: 7.2067) ✓
+     2. Nisemonogatari (score: 2.7727)
+     3. Evangelion: 3.0 You Can (Not) Redo (score: 2.7479) ✓
+     4. Monogatari Series: Second Season (score: 2.2542)
+     5. Nekomonogatari: Kuro (score: 2.1066)
+     6. Neon Genesis Evangelion: Death & Rebirth (score: 2.0214)
+     7. Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai. (score: 1.5506)
+     8. Tengen Toppa Gurren Lagann (score: 1.5427)
+     9. Panty & Stocking with Garterbelt (score: 1.4376)
+    10. Hanamonogatari (score: 1.4070)
+
+  [Autoencoder]  hits: 0/7
+     1. Ginga Eiyuu Densetsu (score: 0.9673)
+     2. Gintama° (score: 0.9371)
+     3. Ping Pong The Animation (score: 0.9248)
+     4. Yojouhan Shinwa Taikei (score: 0.9156)
+     5. Mushishi Zoku Shou: Suzu no Shizuku (score: 0.9120)
+     6. Mushishi Zoku Shou 2nd Season (score: 0.9117)
+     7. Gintama (score: 0.9103)
+     8. Shouwa Genroku Rakugo Shinjuu (score: 0.9102)
+     9. Aria The Avvenire (score: 0.9089)
+    10. Hunter x Hunter (2011) (score: 0.9088)
+
+  [NCF]  hits: 0/7
+     1. Ginga Eiyuu Densetsu (score: 9.4127)
+     2. Kimi no Na wa. (score: 9.3992)
+     3. Haikyuu!!: Karasuno Koukou VS Shiratorizawa Gakuen Koukou (score: 9.3717)
+     4. Hunter x Hunter (2011) (score: 9.3299)
+     5. Gintama Movie: Kanketsu-hen - Yorozuya yo Eien Nare (score: 9.1710)
+     6. Gintama° (score: 9.1498)
+     7. Fullmetal Alchemist: Brotherhood (score: 9.1300)
+     8. Monster (score: 9.0772)
+     9. Aria The Origination (score: 9.0542)
+    10. Kara no Kyoukai 5: Mujun Rasen (score: 8.9754)
+
+  Hidden relevant titles (test set):
+    [ 8.0] Evangelion: 3.0 You Can (Not) Redo
+    [ 9.0] Mahou Shoujo Madoka★Magica Movie 2: Eien no Monogatari
+    [10.0] Neon Genesis Evangelion
+    [ 9.0] Sakamichi no Apollon
+    [ 5.0] Summer Wars
+    [ 5.0] Toradora!
+    [ 8.0] Steins;Gate
 ======================================================================

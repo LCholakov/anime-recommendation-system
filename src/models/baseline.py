@@ -1,21 +1,23 @@
 import pandas as pd
 
 
-def split_train_test(ratings_df: pd.DataFrame, min_ratings: int = 5, test_ratio: float = 0.3) -> tuple:
+def split_train_test(ratings_df: pd.DataFrame, min_ratings: int = 5, test_ratio: float = None) -> tuple:
+    """Leave-one-out split: exactly 1 item per user goes to test.
+
+    test_ratio is kept as a parameter for backwards compatibility but is ignored —
+    leave-one-out always holds out exactly 1 item per user.
+    Users with fewer than min_ratings ratings are dropped entirely.
+    """
     counts = ratings_df.groupby("user_id").size()
     valid_users = counts[counts >= min_ratings].index
     df = ratings_df[ratings_df["user_id"].isin(valid_users)].copy()
 
-    train_rows = []
-    test_rows = []
-    for _, group in df.groupby("user_id"):
-        group = group.sample(frac=1, random_state=42)
-        n_test = max(1, int(len(group) * test_ratio))
-        test_rows.append(group.iloc[:n_test])
-        train_rows.append(group.iloc[n_test:])
+    # for each user, pick 1 random item as the test item
+    test_rows  = df.groupby("user_id").sample(n=1, random_state=42)
+    train_rows = df.drop(test_rows.index)
 
-    train = pd.concat(train_rows).reset_index(drop=True)
-    test = pd.concat(test_rows).reset_index(drop=True)
+    train = train_rows.reset_index(drop=True)
+    test  = test_rows.reset_index(drop=True)
     return train, test
 
 

@@ -32,13 +32,12 @@ model, user_map, anime_map = train_ncf(
 )
 print(f"  Users: {len(user_map)} | Anime: {len(anime_map)}")
 
-# --- evaluate on a sample ---
-test_users   = test["user_id"].unique()
-sample_users = pd.Series(test_users).sample(min(EVAL_USERS, len(test_users)), random_state=SEED).tolist()
-sample_users = [u for u in sample_users if u in user_map]
+# --- shared eval sample (same 1000 users across all models) ---
+# NCF can only score users in user_map; others get empty recs → 0 hits
+sample_users = pd.read_csv("data/eval_users.csv")["user_id"].tolist()
 test_sample  = test[test["user_id"].isin(sample_users)]
 
-print(f"Evaluating on {len(sample_users)} sampled users (n=10)...")
+print(f"Evaluating on {len(sample_users)} shared users (n=10) — NCF covers {len(user_map)} of {train['user_id'].nunique()} users...")
 metrics = evaluate(
     lambda user_id, n: recommend_ncf(user_id, model, user_map, anime_map, train, n=n),
     test_sample, train, n=10
@@ -54,7 +53,7 @@ HEADERS = [
 ]
 row_data = [
     "NCF (Neural Collaborative Filtering)",
-    5, 0.3, 10, "N/A",
+    5, "leave-one-out", 10, "N/A",
     metrics["hit_rate"], metrics["precision"], metrics["recall"],
     f"User+anime embeddings ({EMBED_DIM}d), concat→Dense64→Dense32→1. "
     f"MSE loss, Adam, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}."

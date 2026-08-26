@@ -8,7 +8,7 @@ def build_tfidf_matrix(anime_df: pd.DataFrame) -> pd.DataFrame:
     genres = anime_df["genre"].fillna("").str.lower().str.replace(",", " ")
 
     vectorizer = TfidfVectorizer(token_pattern=r"[a-z][a-z\-]+")
-    tfidf = vectorizer.fit_transform(genres).toarray().astype(np.float64)
+    tfidf = vectorizer.fit_transform(genres).toarray().astype(np.float32)
 
     # drop zero-norm rows (anime with no recognisable genre words)
     norms = np.linalg.norm(tfidf, axis=1)
@@ -17,7 +17,7 @@ def build_tfidf_matrix(anime_df: pd.DataFrame) -> pd.DataFrame:
     ids   = anime_df["anime_id"].values[mask]
 
     # pre-normalise to unit length — dot product then equals cosine similarity
-    tfidf = normalize(tfidf, norm="l2")
+    tfidf = normalize(tfidf.astype(np.float32), norm="l2")
 
     return pd.DataFrame(tfidf, index=ids, columns=vectorizer.get_feature_names_out())
 
@@ -52,12 +52,13 @@ def recommend_tfidf(
     if valid.empty:
         return pd.DataFrame(columns=["anime_id", "tfidf_score", "name", "genre"])
 
-    user_vecs   = tfidf_matrix.loc[valid["anime_id"]].values
-    ratings_arr = valid["rating"].values.astype(np.float64)
-    all_vecs    = tfidf_matrix.values
+    user_vecs   = tfidf_matrix.loc[valid["anime_id"]].values      # already float32
+    ratings_arr = valid["rating"].values.astype(np.float32)
+    all_vecs    = tfidf_matrix.values                              # already float32
 
     sims     = user_vecs @ all_vecs.T                              # (n_rated, n_anime)
     weighted = (sims * ratings_arr[:, np.newaxis]).sum(axis=0)    # (n_anime,)
+    weighted = np.nan_to_num(weighted, nan=0.0, posinf=0.0, neginf=0.0)
 
     score_series = pd.Series(weighted, index=tfidf_matrix.index)
     score_series = score_series.drop(index=[i for i in rated_ids if i in score_series.index])

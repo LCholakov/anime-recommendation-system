@@ -16,12 +16,12 @@ def build_bow_matrix(anime_df: pd.DataFrame) -> pd.DataFrame:
     for _, row in anime_df.iterrows():
         words = set(row["genre"].lower().replace(",", " ").split()) if pd.notna(row["genre"]) else set()
         rows.append({w: 1 for w in words if w.strip() in all_words})
-    raw = pd.DataFrame(rows, index=anime_df["anime_id"], columns=all_words).fillna(0).astype(np.float64)
+    raw = pd.DataFrame(rows, index=anime_df["anime_id"], columns=all_words).fillna(0).astype(np.float32)
     # drop zero-norm rows (anime with no recognisable genre words)
     norms = np.linalg.norm(raw.values, axis=1)
     raw   = raw[norms > 0]
-    # pre-normalise rows to unit length — keeps matmul in [0,1] and avoids sklearn overflow
-    normalised = normalize(raw.values, norm="l2")
+    # pre-normalise rows to unit length — keeps matmul in [0,1] and avoids overflow
+    normalised = normalize(raw.values.astype(np.float32), norm="l2")
     return pd.DataFrame(normalised, index=raw.index, columns=raw.columns)
 
 
@@ -56,11 +56,10 @@ def recommend_bow(
     if valid.empty:
         return pd.DataFrame(columns=["anime_id", "bow_score", "name", "genre"])
 
-    # rows already unit-normalised — dot product == cosine similarity
-    # use float32 to avoid overflow on large matrices
-    user_vecs   = bow_matrix.loc[valid["anime_id"]].values.astype(np.float32)  # (n_rated, features)
-    ratings_arr = valid["rating"].values.astype(np.float32)                    # (n_rated,)
-    all_vecs    = bow_matrix.values.astype(np.float32)                         # (n_anime, features)
+    # rows already unit-normalised — dot product == cosine similarity (float32 throughout)
+    user_vecs   = bow_matrix.loc[valid["anime_id"]].values         # already float32
+    ratings_arr = valid["rating"].values.astype(np.float32)
+    all_vecs    = bow_matrix.values                                 # already float32
 
     sims     = user_vecs @ all_vecs.T                              # (n_rated, n_anime)
     weighted = (sims * ratings_arr[:, np.newaxis]).sum(axis=0)     # (n_anime,)

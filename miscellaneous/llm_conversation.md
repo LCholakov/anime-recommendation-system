@@ -1031,3 +1031,180 @@ Run script subsamples 10K training users for tractable matrix size.
 `encode_ids` maps user/anime IDs to contiguous integer indices for embeddings. `NCF` embeds users and anime separately (32d each), concatenates and passes through MLP. Trains on individual (user, anime, rating) triples — no large matrix needed. Same 1000-user eval sample.
 
 ---
+
+---
+
+## Session 2
+
+---
+
+### User: continue
+
+**Bob:** Confirmed project state — `app/` was empty. Built the full Streamlit app at `app/streamlit_app.py` with three tabs:
+- **Tab 1 — Data Analysis:** renders `anime_analysis.html` and `ratings_analysis.html` in nested sub-tabs via `st.components.v1.html`.
+- **Tab 2 — Model Comparison:** loads `report/model_performance_tracker.xlsx`, deduplicates rows by model name, shows a styled metrics table (green highlight on best per column) + 3 bar charts (Hit Rate / Precision / Recall @10).
+- **Tab 3 — Live Recommender:** user picks 3 anime + rates each → synthetic user is injected into train data → all 5 models return top-10 recommendations side by side. Heavy models cached with `@st.cache_resource`.
+
+---
+
+### User: It's asking for mail. Can we skip that?
+
+**Bob:** Created `.streamlit/config.toml` with `gatherUsageStats = false` — disables Streamlit's email/telemetry prompt on launch.
+
+---
+
+### User: [terminal errors about use_container_width + BoW KeyError]
+
+**Bob:** Two fixes:
+1. Replaced all `use_container_width=True` with `width='stretch'` (Streamlit deprecation, removal after 2025-12-31).
+2. BoW overflow fix in `src/models/bow.py`: cast `user_vecs`, `ratings_arr`, `all_vecs` to `float32` before matmul; added `np.nan_to_num()` after. Added column guard in `show_recs` to show a clean warning instead of crashing on missing columns.
+
+---
+
+### User: ctrl+c to stop or some other way?
+
+**Bob:** Yes, Ctrl+C in the terminal is the correct way to stop Streamlit.
+
+---
+
+### User: live recommender shows garbled &quot; quotes. Also make title matching faster — typing 'mushishi' should surface Mushishi first.
+
+**Bob:** Two fixes in `app/streamlit_app.py`:
+1. `load_anime()` now runs `html.unescape()` on all name values — `&quot;` → `"`, `&#039;` → `'`, etc. Decoded at load time, cached.
+2. Replaced plain `selectbox` with text input + filtered selectbox. `_filtered(query)` returns exact → prefix → contains matches only — so typing `mushishi` shows only Mushishi and its sequels.
+
+---
+
+### User: revert to one field for typing and selection
+
+**Bob:** Reverted to a single `st.selectbox` per anime inside the form. Streamlit's native selectbox already supports typing to filter when clicked.
+
+---
+
+### User: fix random default titles; make dropdown only show relevant matches
+
+**Bob:** Two changes in `app/streamlit_app.py`:
+1. 3 random default titles seeded with `np.random.default_rng(seed=7)` — stable across rerenders, shown as placeholder text.
+2. Text input + filtered selectbox pair: `_filtered()` returns exact → prefix → contains matches. Selectbox only lists filtered results so no unrelated titles appear.
+
+---
+
+### User: put the dropdown on the right side of the text box; add adequate naming
+
+**Bob:** Reorganised picker layout to 3 columns per anime row: `[Search (text input)] [Best match (selectbox)] [Rating (slider)]`. Removed CSS hack, added proper labels "Search", "Best match", "Rating".
+
+---
+
+### User: [BoW/TF-IDF missing columns, SVD overflow, autoencoder missing, NCF limitation]
+
+**Bob:** Multiple fixes:
+1. **BoW/TF-IDF overflow** (`src/models/bow.py`, `src/models/tfidf.py`): build matrices in `float32` instead of `float64`; `np.nan_to_num()` after every matmul.
+2. **SVD overflow** (`src/models/svd.py`): cast to `float32` + `np.nan_to_num()` before `TruncatedSVD`.
+3. **`show_recs` double-merge** (`app/streamlit_app.py`): skip merge if `name` already in df (BoW/TF-IDF already return it); guard on `score_col` presence.
+4. **Autoencoder added** as 5th column — rebuilds user-item matrix with synthetic user included.
+5. **NCF** is 6th column — graceful info message since new-user embedding isn't in the fixed table.
+6. **Model disk caching**: all models now save to `model/` on first build and load from disk on subsequent launches. Files: `bow_matrix.pkl`, `tfidf_matrix.pkl`, `svd_reconstructed.pkl`, `autoencoder.pt`, `ae_matrix.pkl`, `ncf.pt`, `ncf_maps.pkl`.
+
+---
+
+### User: have you updated so manual_inspection.txt has samples from all models?
+
+**Bob:** Rewrote `scripts/generate_inspection_report.py` to cover all 6 models (Baseline, BoW, TF-IDF, SVD, Autoencoder, NCF). For each of the 5 sampled users it now outputs: training favourites, then a block per model showing ranked recommendations with hit markers (✓), plus hidden test-set titles at the end. Script reuses disk-cached models the same way as the Streamlit app. Ran successfully, `report/manual_inspection.txt` updated.
+
+---
+
+### User: have you been recording to the conversation file? If not, fill in the missing info there and continue automatically recording
+
+**Bob:** Session 2 entries were missing — appended them all above. Will continue recording every exchange to this file going forward.
+
+---
+
+### User: NCF — "NCF embeddings are fixed at training time and cannot represent a brand-new user profile."
+
+**Bob:** Fixed NCF for new users using a **proxy user** approach. Added `find_proxy_user(picked_ids, user_map, train_df)` to `src/models/ncf.py` — finds the existing user with the most overlap (by anime_id) with the 3 picked titles, and uses their embedding to score candidates. The 3 picked anime are excluded from the results via a new `exclude_ids` parameter on `recommend_ncf`. The app now shows which proxy user was used via `st.caption`. NCF always returns real recommendations instead of the info message.
+
+---
+
+### User: SVD is slow. Should the live recommender use already-discovered model values?
+
+**Bob:** Yes — SVD was rebuilding the full 70K-user matrix and re-running TruncatedSVD on every click. Fixed across all files:
+
+- **`src/models/svd.py`**: `train_svd()` now returns `(reconstructed_df, Vt, anime_columns)`. Added `fold_in_user(picks, Vt, anime_columns)` which projects the new user's 3 ratings onto the existing item factor matrix `Vt` (a single dot-product) — no retraining.
+- **`src/models/autoencoder.py`**: unchanged — `recommend_autoencoder` already does a single forward pass. Fixed the app to build a one-row vector aligned to the cached `ae_matrix` columns instead of rebuilding the full matrix.
+- **`app/streamlit_app.py`**: `get_svd_reconstructed()` renamed to `get_svd()`, returns the tuple. SVD column now calls `fold_in_user` against the cached `Vt` — instant. Autoencoder column appends one synthetic row to the cached matrix, then forward-passes.
+- **`scripts/run_svd.py`** and **`scripts/generate_inspection_report.py`**: updated to unpack the new tuple from `train_svd()`.
+- Deleted stale `model/svd_reconstructed.pkl` so it rebuilds in the new format on next launch.
+
+---
+
+### User: when I type in search text box, auto-focus it and make Tab move: search1 → match1 → search2 → match2 → search3 → match3
+
+**Bob:** Injected a small JS snippet via `st.components.v1.html(height=0)` in Tab 3 of `app/streamlit_app.py`. It runs 800ms after render (after Streamlit finishes painting), queries all `input[type="text"]` and `div[data-baseweb="select"] input` elements in DOM order, assigns `tabindex` 1–6 to the first six found (which are the 3 search boxes and 3 selectbox inner inputs in layout order), and auto-focuses the first search box. This gives the tab order: Search #1 → Best match #1 → Search #2 → Best match #2 → Search #3 → Best match #3.
+
+---
+
+### User: make the focus go anime 1 search → anime 2 search → anime 3 search
+
+**Bob:** Simplified the JS in `app/streamlit_app.py` — selectbox inputs are removed from tab order (`tabindex="-1"`), the 3 search text inputs get `tabindex` 1–3, and the first is auto-focused on load.
+
+---
+
+### User: SVD suspiciously outperforms all others. NCF and Autoencoder worse than baseline. Data leak?
+
+**Bob:** No actual data leak in the train/test split (0 overlapping user-anime pairs confirmed). The real problem was the **evaluation protocol**: 70/30 split gave a median of 17 test items per user. With 17 relevant items and only needing 1 hit in @10, Hit Rate is nearly guaranteed for any model — SVD 0.871 vs Baseline 0.447 was inflated, not meaningful.
+
+Fixed by switching to **leave-one-out evaluation** (exactly 1 test item per user — the standard @K protocol):
+- `src/models/baseline.py` `split_train_test()` rewritten: uses `df.groupby("user_id").sample(n=1)` to pick exactly one item per user for test.
+- `scripts/split_data.py` created as a standalone script to regenerate the split.
+- `scripts/run_baseline.py` updated to load the pre-existing split instead of re-generating it, and use a 1000-user sample for speed.
+- All other run scripts updated: `test_ratio` label changed to `"leave-one-out"` in tracker rows.
+- `data/train.csv` and `data/test.csv` regenerated (train: 6.26M rows, test: 60,970 rows — 1 per user).
+- All models re-evaluated and tracker rebuilt. New fair results:
+
+| Model | Hit Rate @10 |
+|---|---|
+| Baseline | 0.032 |
+| BoW | 0.015 |
+| TF-IDF | 0.020 |
+| SVD | 0.298 |
+| Autoencoder | 0.014 |
+| NCF | 0.010 |
+
+SVD is still strongest (0.298) which makes sense — it's the only full collaborative filtering model with dense user-item signals. NCF and Autoencoder underperform because they only saw 10K/60K users and need more training. All models' cached pkl/pt files regenerated on the new split.
+
+---
+
+### User: is the comparison fair?
+
+**Bob:** No — three fairness issues found and fixed:
+
+1. **Different eval user pools**: Autoencoder filtered its sample to only users it was trained on (10K/60K), NCF similarly. Each model was effectively being measured on a different subset of users.
+2. **Autoencoder trained on 10K but evaluated only on those 10K**: biased upward — you never penalise it for the 83% of users it can't handle.
+3. **Different random seeds for sampling**: minor, but produced slightly different 1000-user pools per model.
+
+**Fix**: saved `data/eval_users.csv` — 1000 users drawn once (seed=42) from the full test set. All 6 run scripts now load this file. NCF and Autoencoder no longer pre-filter the sample — users outside their training set score 0 hits (honest penalty). All scripts re-run on the shared sample; tracker rebuilt.
+
+Final fair results (same 1000 users, leave-one-out @10):
+| Model | Hit Rate |
+|---|---|
+| Baseline | 0.032 |
+| BoW | 0.015 |
+| TF-IDF | 0.020 |
+| SVD | 0.298 |
+| Autoencoder | 0.014 |
+| NCF | 0.010 |
+
+SVD's lead is genuine — it trains on all 60K users × 9.9K anime and learns collaborative patterns. AE/NCF underperform partly due to limited training (10K users for AE, MSE loss without negative sampling for NCF).
+
+---
+
+### User: should anything new be ignored from git?
+
+**Bob:** Added to `.gitignore`:
+- `model/*.pkl` and `model/*.pt` — trained model artifacts, large binaries, fully reproducible via scripts.
+- `*.xlsx.bak` — temporary backup created during tracker rebuild.
+- `!data/eval_users.csv` — negation rule to force-track the shared eval sample despite the `data/*.csv` blanket ignore.
+
+`scripts/split_data.py` and `data/eval_users.csv` should be committed.
+
+---

@@ -22,10 +22,8 @@ print("Building Bag-of-Words matrix...")
 bow_matrix = build_bow_matrix(anime_df)
 print(f"  Matrix shape: {bow_matrix.shape} ({bow_matrix.shape[1]} genre words)")
 
-# --- evaluate on a sample for speed ---
-EVAL_USERS = 1000
-test_users  = test["user_id"].unique()
-sample_users = pd.Series(test_users).sample(min(EVAL_USERS, len(test_users)), random_state=42).tolist()
+# --- shared eval sample (same 1000 users across all models) ---
+sample_users = pd.read_csv("data/eval_users.csv")["user_id"].tolist()
 test_sample  = test[test["user_id"].isin(sample_users)]
 
 print(f"Evaluating on {len(sample_users)} sampled users (n=10)...")
@@ -44,7 +42,7 @@ HEADERS = [
 ]
 row_data = [
     "BoW + Cosine Similarity",
-    5, 0.3, 10, "N/A",
+    5, "leave-one-out", 10, "N/A",
     metrics["hit_rate"], metrics["precision"], metrics["recall"],
     "Content-based. Genre BoW vectors, cosine similarity weighted by user rating. No collaborative signal."
 ]
