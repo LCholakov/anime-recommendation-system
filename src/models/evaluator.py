@@ -23,6 +23,8 @@ def evaluate(
         precisions.append(precision)
         recalls.append(recall)
 
+    if not hits:
+        return {"hit_rate": 0.0, "precision": 0.0, "recall": 0.0}
     return {
         "hit_rate":  round(sum(hits) / len(hits), 4),
         "precision": round(sum(precisions) / len(precisions), 4),

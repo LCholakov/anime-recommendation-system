@@ -39,18 +39,23 @@ class TestTrainSvd(unittest.TestCase):
         })
         self.matrix = build_user_item_matrix(self.train_df)
 
-    def test_when_called_then_returns_reconstructed_matrix(self):
+    def test_when_called_then_returns_tuple_of_three(self):
         result = train_svd(self.matrix, n_components=2)
-        self.assertIsInstance(result, pd.DataFrame)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 3)
+
+    def test_when_called_then_first_element_is_reconstructed_dataframe(self):
+        recon, Vt, cols = train_svd(self.matrix, n_components=2)
+        self.assertIsInstance(recon, pd.DataFrame)
 
     def test_when_called_then_shape_matches_input(self):
-        result = train_svd(self.matrix, n_components=2)
-        self.assertEqual(result.shape, self.matrix.shape)
+        recon, Vt, cols = train_svd(self.matrix, n_components=2)
+        self.assertEqual(recon.shape, self.matrix.shape)
 
     def test_when_called_then_index_and_columns_match_input(self):
-        result = train_svd(self.matrix, n_components=2)
-        self.assertListEqual(list(result.index), list(self.matrix.index))
-        self.assertListEqual(list(result.columns), list(self.matrix.columns))
+        recon, Vt, cols = train_svd(self.matrix, n_components=2)
+        self.assertListEqual(list(recon.index), list(self.matrix.index))
+        self.assertListEqual(list(recon.columns), list(self.matrix.columns))
 
 
 class TestRecommendSvd(unittest.TestCase):
@@ -61,7 +66,7 @@ class TestRecommendSvd(unittest.TestCase):
             "rating":   [8,  6,  9,  7,  5 ],
         })
         matrix = build_user_item_matrix(self.train_df)
-        self.reconstructed = train_svd(matrix, n_components=2)
+        self.reconstructed, _, _ = train_svd(matrix, n_components=2)
 
     def test_when_called_then_returns_dataframe(self):
         result = recommend_svd(1, self.reconstructed, self.train_df)

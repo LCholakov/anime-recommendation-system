@@ -406,7 +406,7 @@ with tab3:
                     if p["anime_id"] in user_row.index:
                         user_row[p["anime_id"]] = p["rating"] / 10.0
                 ae_matrix_aug = pd.concat([ae_matrix, pd.DataFrame([user_row], index=[uid])])
-                recs = recommend_autoencoder(uid, ae_model, ae_matrix_aug, train_df, n=10)
+                recs = recommend_autoencoder(uid, ae_model, ae_matrix_aug, augmented_train, n=10)
                 show_recs(recs, "predicted_score")
 
         # 6. NCF — proxy user approach for new profiles

@@ -26,9 +26,10 @@ class TestBuildBowMatrix(unittest.TestCase):
         self.assertIn("action", result.columns)
         self.assertIn("adventure", result.columns)
 
-    def test_when_called_then_values_are_binary(self):
+    def test_when_called_then_values_are_in_unit_range(self):
         result = build_bow_matrix(self.anime_df)
-        self.assertTrue(result.isin([0, 1]).all().all())
+        self.assertTrue((result.values >= 0.0).all())
+        self.assertTrue((result.values <= 1.0).all())
 
 
 class TestGetSimilarAnime(unittest.TestCase):

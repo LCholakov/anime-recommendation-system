@@ -1208,3 +1208,17 @@ SVD's lead is genuine — it trains on all 60K users × 9.9K anime and learns co
 `scripts/split_data.py` and `data/eval_users.csv` should be committed.
 
 ---
+
+### User: correctness bug in AE live inference; test/code inconsistencies in SVD and BoW tests; evaluator divide-by-zero
+
+**Bob:** Fixed all four issues. All 84 tests pass.
+
+1. **AE own-picks bug** (`app/streamlit_app.py`): `recommend_autoencoder` was called with `train_df` (original, no synthetic user) instead of `augmented_train`, so `rated_ids` lookup for the new user returned empty set → the 3 picked anime could appear in recommendations. Changed to `augmented_train`.
+
+2. **`test_svd.py` stale assertions** (`tests/model_tests/test_svd.py`): `train_svd` was changed to return `(recon_df, Vt, cols)` but tests still called it expecting a bare `DataFrame`. Updated: `TestTrainSvd` tests now unpack the tuple and assert on each element; `TestRecommendSvd.setUp` uses `_, _` unpacking.
+
+3. **`test_bow.py` wrong value assertion** (`tests/model_tests/test_bow.py`): `test_when_called_then_values_are_binary` checked `isin([0, 1])` but the matrix is L2-normalised (float values in `[0, 1]`). Replaced with `test_when_called_then_values_are_in_unit_range` checking `>= 0.0` and `<= 1.0`.
+
+4. **Evaluator divide-by-zero** (`src/models/evaluator.py`): `sum(hits) / len(hits)` would raise `ZeroDivisionError` on an empty test set. Added early return `{"hit_rate": 0.0, "precision": 0.0, "recall": 0.0}` when `hits` is empty.
+
+---
