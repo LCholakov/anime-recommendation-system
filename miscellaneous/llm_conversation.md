@@ -1433,3 +1433,49 @@ Makes sense to add for the models that actually train — SVD, Autoencoder, NCF.
 Baseline, BoW, and TF-IDF pass no `train_secs` so they record `"N/A"` — they have no meaningful training phase.
 
 ---
+
+---
+
+### User: Now the big task: add a tab to the UI for running models from scratch, subtabs per model, editable parameters, run button, live status + timer, every run records in tracker
+
+**Bob:** Added **⚗️ Експерименти** as Tab 4 in `app/streamlit_app.py`. Six subtabs — one per model. Each subtab has:
+
+- **Editable parameters** in a form (all current hyperparams exposed as number inputs / sliders with min/max/defaults and help text)
+- **▶ Стартирай** button that triggers training + evaluation synchronously
+- **Live status line** (`st.empty()` updated at each phase: building matrix → training → evaluating → done)
+- **Epoch log** for Autoencoder and NCF — `print` is monkey-patched during training to capture every "Epoch N — val_loss: X" line into a scrolling `st.code` box
+- **Elapsed timer** shown in the final success message (total and training-only)
+- **3 metric cards** (Hit Rate / Precision / Recall @K) shown after each run
+- **Tracker write** via `log_run()` after every run — the same 1000-user shared eval sample is used for consistency
+- **Disk save** for SVD, Autoencoder, NCF — so the Live Recommender tab picks up the newly trained model without restart
+- **Cache clear** (`st.cache_data.clear()` + `st.cache_resource.clear()`) after each run so Tab 2 reloads fresh tracker data and Tab 3 reloads the new model
+
+---
+
+---
+
+### User: Ok, so you think it's something like a training dashboard now? I'll test with run_all
+
+**Bob:** Pretty much — lightweight training dashboard: pick hyperparams, hit run, watch epochs scroll, see metrics, already in the tracker. Not TensorBoard but fits the project. NCF will take ~10 minutes as before. Test with Baseline or BoW first to confirm the tracker write and status flow work before committing to a long NCF run.
+
+---
+
+---
+
+### User: start button on BoW switches tab to baseline. Also every tab's latest run is not persistent.
+
+**Bob:** Two classic Streamlit issues:
+
+1. **Tab switch on submit** — nested `st.tabs()` inside a parent tab reset to the first child tab on every rerun triggered by a form submit. Replaced the inner `st.tabs()` with a horizontal `st.radio()` keyed to `st.session_state["exp_model_select"]`. A radio persists its selection across reruns, so clicking Run on BoW stays on BoW.
+
+2. **Results not persistent** — anything rendered inside an `if form_submit_button:` block disappears on the next rerun because the button evaluates to `False`. Fixed by storing each run's result in `st.session_state` (one key per model: `exp_result_baseline`, `exp_result_bow`, etc.) and re-rendering it via `_show_result(key)` on every rerun. After saving to session state the code calls `st.rerun()` so the result renders cleanly outside the `if bl_run:` block.
+
+---
+
+---
+
+### User: add a gentle note in bulgarian to NCF that it takes over 10 min on a macbook pro with m4 pro cpu
+
+**Bob:** Added `st.info()` note directly below the NCF subheader: *"⏱️ Обучението на NCF върху пълния датасет (~6.2 млн. оценки) отнема над 10 минути дори на MacBook Pro с M4 Pro. Препоръчваме да намалите броя епохи или да стартирате от командния ред."*
+
+---

@@ -159,10 +159,11 @@ def _add_synthetic_user(train_df: pd.DataFrame, picks: list[dict]) -> pd.DataFra
 
 
 # ── tabs ─────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "📊 Анализ на данните",
     "📈 Сравнение на модели",
     "🎌 Препоръки на живо",
+    "⚗️ Експерименти",
 ])
 
 
@@ -423,3 +424,406 @@ with tab3:
                 )
                 st.caption(f"*прокси потребител: {proxy_id}*")
                 show_recs(recs, "predicted_rating")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# TAB 4 — Experiments
+# ════════════════════════════════════════════════════════════════════════════
+with tab4:
+    import time as _time
+    import pickle as _pickle
+
+    st.header("⚗️ Експерименти с модели")
+    st.markdown(
+        "Редактирайте параметрите на всеки модел, стартирайте тренировка и "
+        "резултатите автоматично се записват в **model_performance_tracker.xlsx**."
+    )
+
+    # ── shared helpers ───────────────────────────────────────────────────────
+    train_df_exp = load_train()
+    anime_df_exp = load_anime()
+    EVAL_CSV     = os.path.join(ROOT, "data", "eval_users.csv")
+
+    def _run_eval(recommend_fn, n=10):
+        from src.models.evaluator import evaluate
+        test_df      = pd.read_csv(os.path.join(ROOT, "data", "test.csv"))
+        sample_users = pd.read_csv(EVAL_CSV)["user_id"].tolist()
+        return evaluate(recommend_fn, test_df[test_df["user_id"].isin(sample_users)],
+                        train_df_exp, n=n)
+
+    def _log(xlsx, name, metrics, hparams, comment):
+        from src.models.evaluator import log_run
+        log_run(xlsx, name, metrics, hparams, comment)
+
+    def _show_result(key):
+        """Re-render persisted result from session_state."""
+        r = st.session_state.get(key)
+        if not r:
+            return
+        st.success(r["msg"])
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Hit Rate @K",  r["metrics"]["hit_rate"])
+        c2.metric("Precision @K", r["metrics"]["precision"])
+        c3.metric("Recall @K",    r["metrics"]["recall"])
+        if r.get("epochs_log"):
+            st.code(r["epochs_log"])
+
+    # ── model selector (radio keeps selection across reruns) ─────────────────
+    EXP_MODELS = ["Baseline", "BoW", "TF-IDF", "SVD", "Autoencoder", "NCF"]
+    selected = st.radio(
+        "Модел",
+        EXP_MODELS,
+        horizontal=True,
+        key="exp_model_select",
+        label_visibility="collapsed",
+    )
+    st.divider()
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Baseline
+    # ────────────────────────────────────────────────────────────────────────
+    if selected == "Baseline":
+        st.subheader("Baseline — Bayesian Popularity")
+        st.markdown("Препоръчва аниме с най-висок байесов рейтинг. Няма тренировка — само статистика върху train set.")
+
+        with st.form("baseline_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                bl_m_pct = st.slider(
+                    "Праг m (перцентил на брой оценки)",
+                    min_value=50, max_value=99, value=80,
+                    help="Байесовият m = v.quantile(m_pct/100). По-висок → консервативни оценки."
+                )
+            with c2:
+                bl_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            bl_comment = st.text_input("Коментар", value="Baseline popularity run")
+            bl_run = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if bl_run:
+            from src.models.baseline import recommend_popular_anime
+            status = st.empty()
+            t0 = _time.time()
+            status.info("Изчисляване на байесови резултати…")
+            scores_df = train_df_exp.groupby("anime_id")["rating"].agg(v="count", R="mean").reset_index()
+            C = train_df_exp["rating"].mean()
+            m = scores_df["v"].quantile(bl_m_pct / 100)
+            scores_df["bayesian_score"] = (
+                (scores_df["v"] / (scores_df["v"] + m)) * scores_df["R"] +
+                (m / (scores_df["v"] + m)) * C
+            )
+            scores_bl = scores_df[["anime_id", "v", "R", "bayesian_score"]].rename(
+                columns={"v": "rating_count", "R": "avg_rating"}
+            )
+            status.info("Оценяване на 1000 потребители…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_popular_anime(scores_bl, train_df_exp, user_id=uid, n=n),
+                n=int(bl_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            _log(TRACKER_XLSX, "Baseline (Popularity)", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bl_n)},
+                 bl_comment)
+            st.session_state["exp_result_baseline"] = {
+                "msg": f"✅ Готово за {elapsed}s — записано в tracker",
+                "metrics": metrics, "epochs_log": None,
+            }
+            status.empty()
+            st.cache_data.clear()
+            st.rerun()
+
+        _show_result("exp_result_baseline")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # BoW
+    # ────────────────────────────────────────────────────────────────────────
+    elif selected == "BoW":
+        st.subheader("BoW + Cosine Similarity")
+        st.markdown("Съдържателен модел — L2-нормализиран genre bag-of-words, dot-product cosine similarity.")
+
+        with st.form("bow_form"):
+            bow_n       = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            bow_comment = st.text_input("Коментар", value="BoW cosine run")
+            bow_run     = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if bow_run:
+            from src.models.bow import build_bow_matrix, recommend_bow
+            status = st.empty()
+            t0 = _time.time()
+            status.info("Изграждане на BoW матрица…")
+            bow_m = build_bow_matrix(anime_df_exp)
+            status.info(f"Матрица {bow_m.shape} — оценяване…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_bow(uid, train_df_exp, bow_m, anime_df_exp, n=n),
+                n=int(bow_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            _log(TRACKER_XLSX, "BoW + Cosine Similarity", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bow_n)},
+                 bow_comment)
+            st.session_state["exp_result_bow"] = {
+                "msg": f"✅ Готово за {elapsed}s — записано в tracker",
+                "metrics": metrics, "epochs_log": None,
+            }
+            status.empty()
+            st.cache_data.clear()
+            st.rerun()
+
+        _show_result("exp_result_bow")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # TF-IDF
+    # ────────────────────────────────────────────────────────────────────────
+    elif selected == "TF-IDF":
+        st.subheader("TF-IDF + Cosine Similarity")
+        st.markdown("Рядко използваните жанрове получават по-голяма тежест от честите.")
+
+        with st.form("tfidf_form"):
+            tfidf_n       = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            tfidf_comment = st.text_input("Коментар", value="TF-IDF cosine run")
+            tfidf_run     = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if tfidf_run:
+            from src.models.tfidf import build_tfidf_matrix, recommend_tfidf
+            status = st.empty()
+            t0 = _time.time()
+            status.info("Изграждане на TF-IDF матрица…")
+            tfidf_m = build_tfidf_matrix(anime_df_exp)
+            status.info(f"Матрица {tfidf_m.shape} — оценяване…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_tfidf(uid, train_df_exp, tfidf_m, anime_df_exp, n=n),
+                n=int(tfidf_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            _log(TRACKER_XLSX, "TF-IDF + Cosine Similarity", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(tfidf_n)},
+                 tfidf_comment)
+            st.session_state["exp_result_tfidf"] = {
+                "msg": f"✅ Готово за {elapsed}s — записано в tracker",
+                "metrics": metrics, "epochs_log": None,
+            }
+            status.empty()
+            st.cache_data.clear()
+            st.rerun()
+
+        _show_result("exp_result_tfidf")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SVD
+    # ────────────────────────────────────────────────────────────────────────
+    elif selected == "SVD":
+        st.subheader("SVD — Collaborative Filtering")
+        st.markdown("Факторизира user-item матрицата с TruncatedSVD. Най-силният модел.")
+
+        with st.form("svd_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                svd_k = st.number_input(
+                    "n_components (латентни фактори)",
+                    min_value=5, max_value=300, value=50,
+                    help="Брой сингулярни стойности. По-висок → повече детайл, по-бавно."
+                )
+            with c2:
+                svd_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            svd_comment = st.text_input("Коментар", value="SVD run")
+            svd_run = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if svd_run:
+            from src.models.svd import build_user_item_matrix, train_svd, recommend_svd
+            status = st.empty()
+            t0 = _time.time()
+            status.info("Изграждане на user-item матрица…")
+            svd_matrix = build_user_item_matrix(train_df_exp)
+            status.info(f"Матрица {svd_matrix.shape} — тренировка SVD (k={svd_k})…")
+            t_train = _time.time()
+            svd_recon, svd_Vt, svd_cols = train_svd(svd_matrix, n_components=int(svd_k))
+            train_secs = round(_time.time() - t_train, 1)
+            status.info(f"SVD готов ({train_secs}s) — оценяване…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_svd(uid, svd_recon, train_df_exp, n=n),
+                n=int(svd_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            with open(SVD_PKL, "wb") as _f:
+                _pickle.dump((svd_recon, svd_Vt, svd_cols), _f)
+            _log(TRACKER_XLSX, "SVD Collaborative Filtering", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(svd_n),
+                  "n_components": int(svd_k), "train_secs": train_secs},
+                 svd_comment)
+            st.session_state["exp_result_svd"] = {
+                "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",
+                "metrics": metrics, "epochs_log": None,
+            }
+            status.empty()
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.rerun()
+
+        _show_result("exp_result_svd")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Autoencoder
+    # ────────────────────────────────────────────────────────────────────────
+    elif selected == "Autoencoder":
+        st.subheader("Autoencoder")
+        st.markdown("Dense 128 → 32 → 128, Sigmoid, masked MSE. Тренира се върху подизвадка от потребители.")
+
+        with st.form("ae_form"):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                ae_epochs      = st.number_input("Епохи (макс)", min_value=1,   max_value=100,   value=20)
+                ae_batch       = st.number_input("Batch size",   min_value=16,  max_value=512,   value=128, step=16)
+            with c2:
+                ae_patience    = st.number_input("Patience",     min_value=1,   max_value=20,    value=3)
+                ae_train_users = st.number_input(
+                    "Train потребители", min_value=500, max_value=60000, value=10000, step=500,
+                    help="Подизвадка. По-голяма → по-добра матрица, по-бавно."
+                )
+            with c3:
+                ae_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            ae_comment = st.text_input("Коментар", value="Autoencoder run")
+            ae_run = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if ae_run:
+            import torch as _torch
+            import builtins as _builtins
+            from src.models.autoencoder import (
+                build_user_item_matrix as ae_build_matrix,
+                train_autoencoder, recommend_autoencoder,
+            )
+            status    = st.empty()
+            epoch_box = st.empty()
+            t0 = _time.time()
+
+            status.info(f"Подизвадка {int(ae_train_users)} потребители…")
+            sampled = pd.Series(train_df_exp["user_id"].unique()).sample(
+                min(int(ae_train_users), train_df_exp["user_id"].nunique()), random_state=42
+            ).tolist()
+            train_sub = train_df_exp[train_df_exp["user_id"].isin(sampled)]
+            status.info(f"Изграждане на матрица ({len(sampled)} потребители)…")
+            ae_matrix = ae_build_matrix(train_sub)
+            status.info(f"Матрица {ae_matrix.shape} — тренировка…")
+
+            epoch_lines = []
+            _orig_print = _builtins.print
+            def _cap_print(*args, **kwargs):
+                msg = " ".join(str(a) for a in args)
+                if "Epoch" in msg or "Early" in msg:
+                    epoch_lines.append(msg.strip())
+                    epoch_box.code("\n".join(epoch_lines[-15:]))
+                _orig_print(*args, **kwargs)
+            _builtins.print = _cap_print
+            t_train = _time.time()
+            try:
+                ae_model = train_autoencoder(
+                    ae_matrix, epochs=int(ae_epochs),
+                    batch_size=int(ae_batch), patience=int(ae_patience),
+                )
+            finally:
+                _builtins.print = _orig_print
+
+            train_secs = round(_time.time() - t_train, 1)
+            status.info(f"Тренировка завършена ({train_secs}s) — оценяване…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_autoencoder(uid, ae_model, ae_matrix, train_sub, n=n),
+                n=int(ae_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            _torch.save(ae_model.state_dict(), AE_PT)
+            with open(AE_MATRIX_PKL, "wb") as _f:
+                _pickle.dump(ae_matrix, _f)
+            _log(TRACKER_XLSX, "Autoencoder", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(ae_n),
+                  "epochs": int(ae_epochs), "batch_size": int(ae_batch),
+                  "patience": int(ae_patience), "train_users": int(ae_train_users),
+                  "train_secs": train_secs},
+                 ae_comment)
+            st.session_state["exp_result_ae"] = {
+                "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",
+                "metrics": metrics,
+                "epochs_log": "\n".join(epoch_lines),
+            }
+            status.empty()
+            epoch_box.empty()
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.rerun()
+
+        _show_result("exp_result_ae")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # NCF
+    # ────────────────────────────────────────────────────────────────────────
+    elif selected == "NCF":
+        st.subheader("NCF — Neural Collaborative Filtering")
+        st.markdown("User + anime embeddings → concat → Dense 64 → Dense 32 → 1. MSE loss, Adam.")
+        st.info("⏱️ Обучението на NCF върху пълния датасет (~6.2 млн. оценки) отнема над 10 минути дори на MacBook Pro с M4 Pro. Препоръчваме да намалите броя епохи или да стартирате от командния ред.")
+
+        with st.form("ncf_form"):
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                ncf_embed    = st.number_input("Embedding dim", min_value=4,  max_value=256,  value=32,  step=4)
+                ncf_epochs   = st.number_input("Епохи (макс)",  min_value=1,  max_value=100,  value=20)
+            with c2:
+                ncf_batch    = st.number_input("Batch size",    min_value=32, max_value=2048, value=256, step=32)
+                ncf_patience = st.number_input("Patience",      min_value=1,  max_value=20,   value=3)
+            with c3:
+                ncf_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+            ncf_comment = st.text_input("Коментар", value="NCF run")
+            ncf_run = st.form_submit_button("▶ Стартирай", type="primary")
+
+        if ncf_run:
+            import torch as _torch
+            import builtins as _builtins
+            from src.models.ncf import train_ncf, recommend_ncf
+            status    = st.empty()
+            epoch_box = st.empty()
+            t0 = _time.time()
+            status.info(f"Тренировка NCF (embed={ncf_embed}, epochs={ncf_epochs}, batch={ncf_batch})…")
+
+            epoch_lines = []
+            _orig_print = _builtins.print
+            def _cap_print(*args, **kwargs):
+                msg = " ".join(str(a) for a in args)
+                if "Epoch" in msg or "Early" in msg:
+                    epoch_lines.append(msg.strip())
+                    epoch_box.code("\n".join(epoch_lines[-15:]))
+                _orig_print(*args, **kwargs)
+            _builtins.print = _cap_print
+            t_train = _time.time()
+            try:
+                ncf_model, ncf_umap, ncf_amap = train_ncf(
+                    train_df_exp, embed_dim=int(ncf_embed),
+                    epochs=int(ncf_epochs), batch_size=int(ncf_batch),
+                    patience=int(ncf_patience),
+                )
+            finally:
+                _builtins.print = _orig_print
+
+            train_secs = round(_time.time() - t_train, 1)
+            status.info(f"Тренировка завършена ({train_secs}s) — оценяване…")
+            metrics = _run_eval(
+                lambda uid, n: recommend_ncf(uid, ncf_model, ncf_umap, ncf_amap, train_df_exp, n=n),
+                n=int(ncf_n)
+            )
+            elapsed = round(_time.time() - t0, 1)
+            _torch.save(ncf_model.state_dict(), NCF_PT)
+            with open(NCF_MAPS_PKL, "wb") as _f:
+                _pickle.dump((ncf_umap, ncf_amap), _f)
+            _log(TRACKER_XLSX, "NCF (Neural Collaborative Filtering)", metrics,
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(ncf_n),
+                  "epochs": int(ncf_epochs), "batch_size": int(ncf_batch),
+                  "patience": int(ncf_patience), "embed_dim": int(ncf_embed),
+                  "train_secs": train_secs},
+                 ncf_comment)
+            st.session_state["exp_result_ncf"] = {
+                "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",
+                "metrics": metrics,
+                "epochs_log": "\n".join(epoch_lines),
+            }
+            status.empty()
+            epoch_box.empty()
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.rerun()
+
+        _show_result("exp_result_ncf")
