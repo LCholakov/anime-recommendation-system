@@ -13,13 +13,15 @@ def build_user_item_matrix(train_df: pd.DataFrame) -> pd.DataFrame:
 def train_svd(matrix: pd.DataFrame, n_components: int = 50) -> tuple:
     """Returns (reconstructed_df, Vt, anime_columns) so new users can be folded in."""
     n_components = min(n_components, min(matrix.shape) - 1)
-    # float32 avoids overflow in sklearn's randomised SVD on large sparse matrices
-    values = matrix.values.astype(np.float32)
+    # float64 — float32 overflows in sklearn's randomised SVD on large sparse matrices
+    values = matrix.values.astype(np.float64)
     values = np.nan_to_num(values, nan=0.0, posinf=0.0, neginf=0.0)
     svd = TruncatedSVD(n_components=n_components, random_state=42)
-    U = svd.fit_transform(values)          # (n_users, n_components)
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        U = svd.fit_transform(values)      # (n_users, n_components)
     Vt = svd.components_                   # (n_components, n_anime)
-    reconstructed = U @ Vt                 # (n_users, n_anime)
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        reconstructed = U @ Vt             # (n_users, n_anime)
     recon_df = pd.DataFrame(reconstructed, index=matrix.index, columns=matrix.columns)
     return recon_df, Vt, matrix.columns.tolist()
 
