@@ -1,0 +1,209 @@
+======================================================================
+BASELINE MODEL — MANUAL INSPECTION REPORT
+Seed: 42 | Users sampled: 5 | Recommendations: 10
+======================================================================
+
+User 68623
+----------------------------------------
+Training favourites (top 5 by rating):
+  [10.0] Ghost in the Shell: Stand Alone Complex
+  [10.0] Kara no Kyoukai 5: Mujun Rasen
+  [10.0] Steins;Gate
+  [10.0] Byousoku 5 Centimeter
+  [10.0] Gosick
+
+Recommendations:
+   1. Hunter x Hunter (2011) (score: 9.118) 
+   2. Clannad: After Story (score: 9.107) 
+   3. Kimi no Na wa. (score: 9.039) 
+   4. Gintama (score: 9.032) 
+   5. Gintama&#039; (score: 9.004) 
+   6. Shigatsu wa Kimi no Uso (score: 8.905) 
+   7. Sen to Chihiro no Kamikakushi (score: 8.897) 
+   8. Tengen Toppa Gurren Lagann (score: 8.895) 
+   9. Gintama&#039;: Enchousen (score: 8.891) 
+  10. Code Geass: Hangyaku no Lelouch (score: 8.884) ✓ HIT
+
+Hidden relevant titles (test set):
+  [ 5.0] Brothers Conflict — ✗ missed
+  [ 9.0] Code Geass: Boukoku no Akito 2 - Hikisakareshi Yokuryuu Picture Drama — ✗ missed
+  [ 4.0] Trigun — ✗ missed
+  [10.0] Angel Beats!: Another Epilogue — ✗ missed
+  [ 8.0] D.N.Angel — ✗ missed
+  [ 8.0] Diabolik Lovers More,Blood — ✗ missed
+  [10.0] Death Note — ✗ missed
+  [ 8.0] Ouran Koukou Host Club — ✗ missed
+  [ 9.0] Code Geass: Boukoku no Akito 4 - Nikushimi no Kioku Kara Picture Drama — ✗ missed
+  [ 9.0] Kara no Kyoukai 7: Satsujin Kousatsu (Kou) — ✗ missed
+  [10.0] Angel Beats! — ✗ missed
+  [10.0] Cossette no Shouzou — ✗ missed
+  [10.0] Angel Beats! Specials — ✗ missed
+  [10.0] Nana — ✗ missed
+  [10.0] Darker than Black: Ryuusei no Gemini — ✗ missed
+  [10.0] Evangelion: 2.0 You Can (Not) Advance — ✗ missed
+  [10.0] Ghost in the Shell — ✗ missed
+  [ 9.0] Code Geass: Hangyaku no Lelouch — ✓ found
+  [ 9.0] Code Geass: Boukoku no Akito 1 - Yokuryuu wa Maiorita — ✗ missed
+
+Hits: 1/19
+======================================================================
+
+User 24722
+----------------------------------------
+Training favourites (top 5 by rating):
+  [10.0] One Piece Movie 9: Episode of Chopper Plus - Fuyu ni Saku, Kiseki no Sakura
+  [10.0] Toaru Majutsu no Index
+  [10.0] One Piece: Nenmatsu Tokubetsu Kikaku! Mugiwara no Luffy Oyabun Torimonochou
+  [10.0] One Piece Film: Strong World Episode 0
+  [10.0] Katekyo Hitman Reborn!
+
+Recommendations:
+   1. Steins;Gate (score: 9.212) 
+   2. Hunter x Hunter (2011) (score: 9.118) 
+   3. Clannad: After Story (score: 9.107) 
+   4. Kimi no Na wa. (score: 9.039) 
+   5. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
+   6. Shigatsu wa Kimi no Uso (score: 8.905) 
+   7. Sen to Chihiro no Kamikakushi (score: 8.897) 
+   8. Tengen Toppa Gurren Lagann (score: 8.895) 
+   9. Gintama&#039;: Enchousen (score: 8.891) ✓ HIT
+  10. Code Geass: Hangyaku no Lelouch (score: 8.884) 
+
+Hidden relevant titles (test set):
+  [10.0] Naruto Movie 2: Dai Gekitotsu! Maboroshi no Chiteiiseki Dattebayo! — ✗ missed
+  [ 8.0] Naruto — ✗ missed
+  [10.0] Mouretsu Pirates — ✗ missed
+  [10.0] Bleach — ✗ missed
+  [10.0] Naruto x UT — ✗ missed
+  [10.0] Bleach: Memories in the Rain — ✗ missed
+  [10.0] One Piece Movie 2: Nejimaki-jima no Daibouken — ✗ missed
+  [10.0] Bleach Movie 2: The DiamondDust Rebellion - Mou Hitotsu no Hyourinmaru — ✗ missed
+  [10.0] Densetsu no Yuusha no Densetsu — ✗ missed
+  [10.0] One Piece Movie 4: Dead End no Bouken — ✗ missed
+  [10.0] Naruto: Shippuuden Movie 1 — ✗ missed
+  [10.0] One Piece Movie 1 — ✗ missed
+  [10.0] Gintama&#039;: Enchousen — ✓ found
+  [10.0] Shakugan no Shana — ✗ missed
+  [10.0] Sword Art Online — ✗ missed
+  [10.0] Naruto: Dai Katsugeki!! Yuki Hime Shinobu Houjou Dattebayo! Special: Konoha Annual Sports Festival — ✗ missed
+  [10.0] Ao no Exorcist: Kuro no Iede — ✗ missed
+  [10.0] One Piece Film: Strong World — ✗ missed
+  [10.0] Naruto Soyokazeden Movie: Naruto to Mashin to Mitsu no Onegai Dattebayo!! — ✗ missed
+  [10.0] Bleach Movie 4: Jigoku-hen — ✗ missed
+  [10.0] Naruto: Takigakure no Shitou - Ore ga Eiyuu Dattebayo! — ✗ missed
+
+Hits: 1/21
+======================================================================
+
+User 7630
+----------------------------------------
+Training favourites (top 5 by rating):
+  [10.0] Junjou Romantica
+  [10.0] Junjou Romantica 2
+  [10.0] Bishoujo Senshi Sailor Moon: Sailor Stars
+  [10.0] Sekaiichi Hatsukoi 2
+  [10.0] Last Exile
+
+Recommendations:
+   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
+   2. Steins;Gate (score: 9.212) 
+   3. Hunter x Hunter (2011) (score: 9.118) 
+   4. Clannad: After Story (score: 9.107) 
+   5. Kimi no Na wa. (score: 9.039) 
+   6. Gintama (score: 9.032) 
+   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
+   8. Gintama&#039; (score: 9.004) 
+   9. Shigatsu wa Kimi no Uso (score: 8.905) 
+  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+
+Hidden relevant titles (test set):
+  [ 8.0] Seto no Hanayome — ✗ missed
+  [ 8.0] Blood+ — ✗ missed
+  [ 5.0] Okane ga Nai — ✗ missed
+  [ 5.0] Elfen Lied Special — ✗ missed
+  [ 7.0] Papa to Kiss in the Dark — ✗ missed
+  [ 7.0] Seitokaichou ni Chuukoku — ✗ missed
+  [ 8.0] Natsume Yuujinchou — ✗ missed
+  [ 9.0] Bishoujo Senshi Sailor Moon SuperS — ✗ missed
+  [ 8.0] Toradora! — ✗ missed
+  [ 6.0] Midori no Hibi — ✗ missed
+  [10.0] Sekaiichi Hatsukoi — ✗ missed
+  [ 6.0] Green Green — ✗ missed
+  [ 4.0] School Days — ✗ missed
+  [ 7.0] Myself; Yourself — ✗ missed
+  [ 8.0] Ninin ga Shinobuden — ✗ missed
+  [ 4.0] Nekojiru-sou — ✗ missed
+
+Hits: 0/16
+======================================================================
+
+User 16900
+----------------------------------------
+Training favourites (top 5 by rating):
+  [ 9.0] Nikuyome: Takayanagi Ke no Hitobito
+  [ 9.0] Hatsu Inu The Animation
+  [ 8.0] Fault!!
+  [ 8.0] Daiakuji: The Xena Buster
+  [ 8.0] Anata dake Konbanwa
+
+Recommendations:
+   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
+   2. Steins;Gate (score: 9.212) 
+   3. Hunter x Hunter (2011) (score: 9.118) 
+   4. Clannad: After Story (score: 9.107) 
+   5. Kimi no Na wa. (score: 9.039) 
+   6. Gintama (score: 9.032) 
+   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
+   8. Gintama&#039; (score: 9.004) 
+   9. Shigatsu wa Kimi no Uso (score: 8.905) 
+  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+
+Hidden relevant titles (test set):
+  [ 6.0] Akina to Onsen de H Shiyo! — ✗ missed
+  [ 9.0] Hatsu Inu 2 The Animation: Strange Kind of Woman - Again — ✗ missed
+  [ 8.0] Aneimo — ✗ missed
+  [ 7.0] Ane Jiru 2 The Animation: Shirakawa Sanshimai ni Omakase — ✗ missed
+  [ 7.0] Oni Chichi 2 — ✗ missed
+  [ 7.0] Brandish — ✗ missed
+  [ 7.0] Front Innocent: Mou Hitotsu no Lady Innocent — ✗ missed
+  [ 7.0] Accelerando: Datenshi-tachi no Sasayaki — ✗ missed
+  [ 7.0] Hitozuma♪Kasumi-san — ✗ missed
+  [ 8.0] Hi.Me.Go.To — ✗ missed
+  [ 7.0] Enbo — ✗ missed
+  [ 8.0] Cafe Junkie — ✗ missed
+
+Hits: 0/12
+======================================================================
+
+User 3475
+----------------------------------------
+Training favourites (top 5 by rating):
+  [10.0] Neon Genesis Evangelion: The End of Evangelion
+  [10.0] Maison Ikkoku
+  [ 9.0] Evangelion: 2.0 You Can (Not) Advance
+  [ 9.0] Redline
+  [ 9.0] Mahou Shoujo Madoka★Magica
+
+Recommendations:
+   1. Fullmetal Alchemist: Brotherhood (score: 9.273) 
+   2. Steins;Gate (score: 9.212) ✓ HIT
+   3. Hunter x Hunter (2011) (score: 9.118) 
+   4. Clannad: After Story (score: 9.107) 
+   5. Kimi no Na wa. (score: 9.039) 
+   6. Gintama (score: 9.032) 
+   7. Code Geass: Hangyaku no Lelouch R2 (score: 9.022) 
+   8. Gintama&#039; (score: 9.004) 
+   9. Shigatsu wa Kimi no Uso (score: 8.905) 
+  10. Sen to Chihiro no Kamikakushi (score: 8.897) 
+
+Hidden relevant titles (test set):
+  [ 8.0] Evangelion: 3.0 You Can (Not) Redo — ✗ missed
+  [ 9.0] Mahou Shoujo Madoka★Magica Movie 2: Eien no Monogatari — ✗ missed
+  [10.0] Neon Genesis Evangelion — ✗ missed
+  [ 9.0] Sakamichi no Apollon — ✗ missed
+  [ 5.0] Summer Wars — ✗ missed
+  [ 5.0] Toradora! — ✗ missed
+  [ 8.0] Steins;Gate — ✓ found
+
+Hits: 1/7
+======================================================================
