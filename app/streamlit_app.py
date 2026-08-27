@@ -53,6 +53,9 @@ def load_tracker() -> pd.DataFrame:
     metric = "Hit Rate @10"
     if metric in df.columns:
         df[metric] = pd.to_numeric(df[metric], errors="coerce")
+        # only compare runs with exactly 10 recommendations
+        if "n_recommendations" in df.columns:
+            df = df[pd.to_numeric(df["n_recommendations"], errors="coerce") == 10]
         # keep the best (highest Hit Rate) run per model
         idx = df.groupby("Model")[metric].idxmax()
         best = df.loc[idx].reset_index(drop=True)
@@ -487,9 +490,9 @@ with tab4:
     _MODEL_COLS = {
         "Baseline":    ["Run #", "Timestamp", "m_percentile", "n_recommendations",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
-        "BoW":         ["Run #", "Timestamp", "n_recommendations",
+        "BoW":         ["Run #", "Timestamp", "min_rating_threshold", "n_recommendations",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
-        "TF-IDF":      ["Run #", "Timestamp", "n_recommendations",
+        "TF-IDF":      ["Run #", "Timestamp", "min_rating_threshold", "sublinear_tf", "n_recommendations",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
         "SVD":         ["Run #", "Timestamp", "n_components", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
@@ -528,14 +531,17 @@ with tab4:
                 ]) if c in hist.columns]
                 metric_cols = ["Hit Rate @10", "Precision @10", "Recall @10"]
                 int_cols    = ["Run #", "m_percentile", "n_recommendations",
+                               "min_rating_threshold",
                                "epochs", "batch_size", "patience", "embed_dim",
                                "n_components", "train_users"]
                 display = hist[show_cols].reset_index(drop=True)
+                # replace bare None with pd.NA so downstream coercions treat them uniformly
+                display = display.infer_objects(copy=False).fillna(value=pd.NA)
                 # force metric columns to float (N/A strings → NaN)
                 for col in metric_cols:
                     if col in display.columns:
                         display[col] = pd.to_numeric(display[col], errors="coerce")
-                # force integer columns to nullable Int64 so they show as 80 not 80.0
+                # force integer columns to nullable Int64 so they show as whole numbers
                 for col in int_cols:
                     if col in display.columns:
                         display[col] = pd.to_numeric(display[col], errors="coerce").astype("Int64")
@@ -656,9 +662,16 @@ with tab4:
         st.markdown("Съдържателен модел — L2-нормализиран genre bag-of-words, dot-product cosine similarity.")
 
         with st.form("bow_form"):
-            bow_n       = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
-            bow_comment = st.text_input("Коментар", value="BoW cosine run")
-            bow_run     = st.form_submit_button("▶ Стартирай", type="primary")
+            c1, c2 = st.columns(2)
+            with c1:
+                bow_n   = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+                bow_mrt = st.number_input(
+                    "min_rating_threshold", min_value=1, max_value=10, value=1,
+                    help="Само оценки ≥ тази стойност се използват като семена за препоръки."
+                )
+            with c2:
+                bow_comment = st.text_input("Коментар", value="BoW cosine run")
+            bow_run = st.form_submit_button("▶ Стартирай", type="primary")
 
         if bow_run:
             from src.models.bow import build_bow_matrix, recommend_bow
@@ -667,13 +680,16 @@ with tab4:
             status.info("Изграждане на BoW матрица…")
             bow_m = build_bow_matrix(anime_df_exp)
             status.info(f"Матрица {bow_m.shape} — оценяване…")
+            _bow_mrt = int(bow_mrt)
             metrics = _run_eval(
-                lambda uid, n: recommend_bow(uid, train_df_exp, bow_m, anime_df_exp, n=n),
+                lambda uid, n: recommend_bow(uid, train_df_exp, bow_m, anime_df_exp, n=n,
+                                             min_rating_threshold=_bow_mrt),
                 n=int(bow_n)
             )
             elapsed = round(_time.time() - t0, 1)
             _log(TRACKER_XLSX, "BoW + Cosine Similarity", metrics,
-                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bow_n)},
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bow_n),
+                  "min_rating_threshold": _bow_mrt},
                  bow_comment)
             st.session_state["exp_result_bow"] = {
                 "msg": f"✅ Готово за {elapsed}s — записано в tracker",
@@ -693,24 +709,39 @@ with tab4:
         st.markdown("Рядко използваните жанрове получават по-голяма тежест от честите.")
 
         with st.form("tfidf_form"):
-            tfidf_n       = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
-            tfidf_comment = st.text_input("Коментар", value="TF-IDF cosine run")
-            tfidf_run     = st.form_submit_button("▶ Стартирай", type="primary")
+            c1, c2 = st.columns(2)
+            with c1:
+                tfidf_n   = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
+                tfidf_mrt = st.number_input(
+                    "min_rating_threshold", min_value=1, max_value=10, value=1,
+                    help="Само оценки ≥ тази стойност се използват като семена за препоръки."
+                )
+            with c2:
+                tfidf_sublinear = st.checkbox(
+                    "sublinear_tf",
+                    value=False,
+                    help="Замества честотата на жанра с 1+log(tf). Намалява влиянието на доминиращи жанрове."
+                )
+                tfidf_comment = st.text_input("Коментар", value="TF-IDF cosine run")
+            tfidf_run = st.form_submit_button("▶ Стартирай", type="primary")
 
         if tfidf_run:
             from src.models.tfidf import build_tfidf_matrix, recommend_tfidf
             status = st.empty()
             t0 = _time.time()
             status.info("Изграждане на TF-IDF матрица…")
-            tfidf_m = build_tfidf_matrix(anime_df_exp)
+            tfidf_m = build_tfidf_matrix(anime_df_exp, sublinear_tf=bool(tfidf_sublinear))
             status.info(f"Матрица {tfidf_m.shape} — оценяване…")
+            _tfidf_mrt = int(tfidf_mrt)
             metrics = _run_eval(
-                lambda uid, n: recommend_tfidf(uid, train_df_exp, tfidf_m, anime_df_exp, n=n),
+                lambda uid, n: recommend_tfidf(uid, train_df_exp, tfidf_m, anime_df_exp, n=n,
+                                               min_rating_threshold=_tfidf_mrt),
                 n=int(tfidf_n)
             )
             elapsed = round(_time.time() - t0, 1)
             _log(TRACKER_XLSX, "TF-IDF + Cosine Similarity", metrics,
-                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(tfidf_n)},
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(tfidf_n),
+                  "min_rating_threshold": _tfidf_mrt, "sublinear_tf": bool(tfidf_sublinear)},
                  tfidf_comment)
             st.session_state["exp_result_tfidf"] = {
                 "msg": f"✅ Готово за {elapsed}s — записано в tracker",

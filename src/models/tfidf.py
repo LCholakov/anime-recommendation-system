@@ -4,10 +4,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
 
 
-def build_tfidf_matrix(anime_df: pd.DataFrame) -> pd.DataFrame:
+def build_tfidf_matrix(anime_df: pd.DataFrame, sublinear_tf: bool = False) -> pd.DataFrame:
     genres = anime_df["genre"].fillna("").str.lower().str.replace(",", " ")
 
-    vectorizer = TfidfVectorizer(token_pattern=r"[a-z][a-z\-]+")
+    vectorizer = TfidfVectorizer(token_pattern=r"[a-z][a-z\-]+", sublinear_tf=sublinear_tf)
     tfidf = vectorizer.fit_transform(genres).toarray().astype(np.float64)
 
     # drop zero-norm rows (anime with no recognisable genre words)
@@ -43,12 +43,16 @@ def recommend_tfidf(
     train_df: pd.DataFrame,
     tfidf_matrix: pd.DataFrame,
     anime_df: pd.DataFrame,
-    n: int = 10
+    n: int = 10,
+    min_rating_threshold: int = 1,
 ) -> pd.DataFrame:
     user_ratings = train_df[train_df["user_id"] == user_id].copy()
     rated_ids    = set(user_ratings["anime_id"])
 
-    valid = user_ratings[user_ratings["anime_id"].isin(tfidf_matrix.index)]
+    valid = user_ratings[
+        user_ratings["anime_id"].isin(tfidf_matrix.index) &
+        (user_ratings["rating"] >= min_rating_threshold)
+    ]
     if valid.empty:
         return pd.DataFrame(columns=["anime_id", "tfidf_score", "name", "genre"])
 

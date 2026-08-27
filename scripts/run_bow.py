@@ -12,6 +12,8 @@ from src.models.evaluator import evaluate, log_run
 MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+MIN_RATING_THRESHOLD = 1   # only use ratings >= this as recommendation seeds
+
 # --- load & split ---
 ratings_df = load_rating_data("data/rating_clean.csv")
 anime_df   = load_anime_data("data/anime_clean.csv")
@@ -32,7 +34,8 @@ test_sample  = test[test["user_id"].isin(sample_users)]
 
 print(f"Evaluating on {len(sample_users)} sampled users (n=10)...")
 metrics = evaluate(
-    lambda user_id, n: recommend_bow(user_id, train, bow_matrix, anime_df, n=n),
+    lambda user_id, n: recommend_bow(user_id, train, bow_matrix, anime_df, n=n,
+                                     min_rating_threshold=MIN_RATING_THRESHOLD),
     test_sample, train, n=10
 )
 print(f"  Hit Rate : {metrics['hit_rate']}")
@@ -46,12 +49,13 @@ print("✅ Saved model/bow_matrix.pkl")
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.
-COMMENT = "Content-based. Genre BoW, L2-normalised, dot-product cosine. Weighted by user rating."
+COMMENT = f"Content-based. Genre BoW, L2-normalised, dot-product cosine. Weighted by user rating. min_rating_threshold={MIN_RATING_THRESHOLD}."
 log_run(
     "report/model_performance_tracker.xlsx",
     "BoW + Cosine Similarity",
     metrics,
-    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10},
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
+     "min_rating_threshold": MIN_RATING_THRESHOLD},
     COMMENT,
 )
 print("✅ Results written to report/model_performance_tracker.xlsx")
