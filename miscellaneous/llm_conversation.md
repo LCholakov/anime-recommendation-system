@@ -1839,4 +1839,76 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
 **Bob:** That's Streamlit's built-in onboarding toolbar popup. Added `toolbarMode = "minimal"` and `developmentMode = false` to `.streamlit/config.toml` — hides the toolbar and suppresses dev banners on all machines. The "install Streamlit Skills" prompt is a VS Code extension popup, not controllable from app config.
 
 ---
+
+### User: check the tracking on NCF. Why is it so poorly performing. Even with more embed_dim or smaller batch_size, results barely change.
+
+**Bob:** Tracker shows HR stuck at 0.009–0.015 across all NCF runs regardless of embed_dim (32→128) or batch_size. Root cause: NCF is trained with MSE loss to predict exact rating values (1–10) — it's a rating predictor, not a ranking model. For leave-one-out top-N eval it has to rank unseen anime, but it was never trained to do that. Produces near-identical top-10 lists across users (dominated by popular well-embedded titles) — a worse version of Baseline. Hyperparameters don't help because the objective is fundamentally wrong. Proper fix would be BPR (Bayesian Personalised Ranking) loss with negative sampling, which trains on (liked, not-liked) pairs and directly optimises ranking. As-is this is a valid experiment to document and explain in the report.
+
+---
+
+### User: is it a similar issue for the autoencoder?
+
+**Bob:** Partially. Same tension (trained with reconstruction loss, not ranking loss) but structurally better: AE takes the full user rating vector as input and reconstructs all items at once, so it generalises across the item space through the bottleneck — proper collaborative filtering. NCF only sees individual (user, anime, rating) triples and never the full context. Main AE limitation is the 10k-user subsample (memory constraint on the 60k×9k matrix) — many eval users aren't in the trained matrix → empty recs → 0 hits. With full 60k users AE would likely approach SVD. Report framing: NCF fails due to wrong objective; AE fails due to practical memory constraint on training size.
+
+---
+
+### User: as you can see from the tracker, I ran autoencoder at 60k and it barely changed. not even remotely close to SVD
+
+**Bob:** Confirmed from tracker — 10k→60k users moves HR from 0.014 to 0.015–0.022; SVD is at 0.298. Not a scale problem. Root cause is the masked MSE loss: only observed ratings contribute to gradients, so unobserved item outputs are unconstrained — dominated by decoder bias terms, not user preference. SVD doesn't have this problem because matrix factorisation is inherently global — the low-rank approximation fills in unobserved cells as a natural consequence of decomposing the whole matrix. Also a normalisation issue: observed ratings are in [0.1, 1.0] but unobserved cells are 0.0 — Sigmoid can output 0.0 but the model is never trained to do so for observed items, making the "unobserved" vs "low preference" boundary ambiguous. Both AE and NCF underperform SVD for the same underlying reason: they only learn from what a user has rated and produce poor scores for everything else.
+
+---
   }
+
+  ## Session 5 {
+
+    ### User: continue
+
+    **Bob:** Fully re-acquainted with the project. All 6 models implemented and saving artifacts. Tracker is 20 columns. Streamlit has 4 tabs (live recommender, experiment dashboard, model comparison, data analysis). Last session ended with the analysis of why Autoencoder underperforms SVD even at 60k training users — root cause is masked MSE leaving unobserved item outputs unconstrained. Current open items: sublinear_tf null result documentation in tracker; report/presentation writeup; any final UI polish before submission.
+
+---
+
+    ### User: Acquaint yourself with the project content and the conversation history at llm_conversation. There is an issue with Autoencoder (AE) and NCF - they don't answer the correct question. Fix both the AE and the NCF to function correctly to the task. Implement all necessary changes to the backend, frontend, logging, tracking.
+
+    **Bob:** Root cause confirmed from the conversation history and code inspection. Both models were answering the wrong question:
+
+    **AE** was trained with masked MSE to *reconstruct observed ratings*. Unobserved item outputs were dominated by decoder bias terms — the model was never trained to score unseen items relative to each other, so top-N ranking produced near-random results.
+
+    **NCF** was trained with MSE to *predict exact rating values* (1–10). This is a rating-regression objective, not a ranking objective. The model learned to minimise prediction error on observed pairs, which gives it no signal about which unseen items a user would like most — all unrated items produce near-identical low scores.
+
+    **Fix applied**: Both models now use **BPR (Bayesian Personalised Ranking)** loss with implicit negative sampling. For each training step, a (user, positive_item, negative_item) triple is drawn — positive = item the user has rated, negative = item the user has not rated. The loss trains the model to score pos > neg, which directly optimises the ranking objective needed for top-N recommendation. This is the standard approach for top-N DL recommendation systems.
+
+    Changes made:
+    - `src/models/autoencoder.py` — removed `_masked_mse`; added `_bpr_loss` and `_sample_bpr_pairs`; `train_autoencoder` now re-samples BPR triples each epoch and backpropagates through the pairwise ranking loss.
+    - `src/models/ncf.py` — removed MSE loss and DataLoader over (user, anime, rating) triples; added `_build_positive_sets` and `_sample_bpr_batches`; `train_ncf` now trains with BPR via `BCEWithLogitsLoss(pos_score - neg_score, 1)`.
+    - `scripts/run_autoencoder.py` — updated COMMENT to reflect BPR loss.
+    - `scripts/run_ncf.py` — updated COMMENT to reflect BPR loss.
+    - `app/streamlit_app.py` — updated AE and NCF description strings in the Experiments tab to mention BPR ranking loss.
+
+    Inference (`recommend_autoencoder`, `recommend_ncf`) unchanged — same forward pass, same output format, fully compatible with evaluator, tracker, and live recommender.
+
+---
+
+    ### User: double check all aspects of the new changes - including parameters to adjust, frontend experiment area, tracking in the excel sheet including any changes without altering past data. This is a big change. verify on all fronts
+
+    **Bob:** Full audit performed across every touchpoint. Issues found and fixed:
+
+    1. **Dead imports** — `DataLoader`, `TensorDataset`, `random_split` were still imported in both `autoencoder.py` and `ncf.py` after the BPR refactor removed all DataLoader-based code. Removed.
+
+    2. **Hardcoded BPR density parameters** — `n_per_user = 10` in NCF and `n_users * 20` in AE were both hardcoded constants with no way to experiment or track them. Fixed by exposing `n_per_user` as a named argument to `train_ncf` and `pairs_per_user` as a named argument to `train_autoencoder`.
+
+    3. **Tracker missing columns** — `pairs_per_user` and `n_per_user` were not in the tracker schema. Added both to `log_run`'s `row_data` and `headers` in `src/models/evaluator.py`. The tracker's `append_to_tracker` function already handles adding new columns without touching past rows (uses header-name → column-number mapping), so all existing data is preserved.
+
+    4. **Streamlit experiment forms** — AE form had no `pairs_per_user` input; NCF form had no `n_per_user` input. Added both controls (number inputs, with Bulgarian help text), wired them through `train_autoencoder`/`train_ncf` calls, and included them in the `_log()` call so they write to the tracker.
+
+    5. **`_MODEL_COLS` in Streamlit** — History table column lists for AE and NCF did not include the new params. Added `"pairs_per_user"` to AE columns and `"n_per_user"` to NCF columns.
+
+    6. **`int_cols` in `_show_result`** — The list used to cast columns to nullable Int64 for display did not include the new params. Added both so they render as integers, not floats.
+
+    7. **`run_autoencoder.py` and `run_ncf.py`** — Added `PAIRS_PER_USER` / `N_PER_USER` constants, wired them into the training call and `log_run` hyperparams dict.
+
+    Unchanged (confirmed correct): evaluator `evaluate()`, live recommender AE/NCF inference, `generate_inspection_report.py`, `run_all.py`, all tests (84/84 pass).
+
+---
+  }
+
+}

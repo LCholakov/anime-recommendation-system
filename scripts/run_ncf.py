@@ -12,12 +12,13 @@ from src.models.evaluator import evaluate, log_run
 MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-SEED       = 42
-EPOCHS     = 20
-BATCH_SIZE = 256
-PATIENCE   = 3
-EMBED_DIM  = 32
-EVAL_USERS = 1000
+SEED        = 42
+EPOCHS      = 20
+BATCH_SIZE  = 256
+PATIENCE    = 3
+EMBED_DIM   = 32
+N_PER_USER  = 10      # BPR positive pairs sampled per user per epoch
+EVAL_USERS  = 1000
 
 torch.manual_seed(SEED)
 
@@ -27,7 +28,7 @@ test  = pd.read_csv("data/test.csv")
 print(f"Train: {len(train)} rows | Test: {len(test)} rows")
 
 # --- train NCF ---
-print(f"Training NCF (embed={EMBED_DIM}, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE})...")
+print(f"Training NCF (embed={EMBED_DIM}, epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, n_per_user={N_PER_USER})...")
 _t0 = time.time()
 model, user_map, anime_map = train_ncf(
     train,
@@ -35,6 +36,7 @@ model, user_map, anime_map = train_ncf(
     epochs=EPOCHS,
     batch_size=BATCH_SIZE,
     patience=PATIENCE,
+    n_per_user=N_PER_USER,
 )
 TRAIN_SECS = round(time.time() - _t0, 1)
 print(f"  Users: {len(user_map)} | Anime: {len(anime_map)}")
@@ -63,8 +65,9 @@ print("✅ Saved model/ncf.pt + model/ncf_maps.pkl")
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.
 COMMENT = (
-    f"User+anime embeddings ({EMBED_DIM}d), concat→Dense64→Dense32→1. "
-    f"MSE loss, Adam. epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}."
+    f"NCF v2 — User+anime embeddings ({EMBED_DIM}d), concat→Dense64→Dense32→1. "
+    f"BPR ranking loss, Adam. epochs={EPOCHS}, batch={BATCH_SIZE}, "
+    f"patience={PATIENCE}, n_per_user={N_PER_USER}."
 )
 log_run(
     "report/model_performance_tracker.xlsx",
@@ -73,7 +76,7 @@ log_run(
     {
         "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
         "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
-        "embed_dim": EMBED_DIM, "train_secs": TRAIN_SECS,
+        "embed_dim": EMBED_DIM, "n_per_user": N_PER_USER, "train_secs": TRAIN_SECS,
     },
     COMMENT,
 )

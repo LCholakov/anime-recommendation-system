@@ -497,10 +497,10 @@ with tab4:
         "SVD":         ["Run #", "Timestamp", "n_components", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
         "Autoencoder": ["Run #", "Timestamp", "epochs", "batch_size", "patience",
-                        "train_users", "n_recommendations", "Train time (s)",
+                        "train_users", "pairs_per_user", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
         "NCF":         ["Run #", "Timestamp", "embed_dim", "epochs", "batch_size",
-                        "patience", "n_recommendations", "Train time (s)",
+                        "patience", "n_per_user", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
     }
 
@@ -533,7 +533,8 @@ with tab4:
                 int_cols    = ["Run #", "m_percentile", "n_recommendations",
                                "min_rating_threshold",
                                "epochs", "batch_size", "patience", "embed_dim",
-                               "n_components", "train_users"]
+                               "n_components", "train_users",
+                               "pairs_per_user", "n_per_user"]
                 display = hist[show_cols].reset_index(drop=True)
                 # replace bare None with pd.NA so downstream coercions treat them uniformly
                 display = display.infer_objects(copy=False).fillna(value=pd.NA)
@@ -811,7 +812,7 @@ with tab4:
     # ────────────────────────────────────────────────────────────────────────
     elif selected == "Autoencoder":
         st.subheader("Autoencoder")
-        st.markdown("Dense 128 → 32 → 128, Sigmoid, masked MSE. Тренира се върху подизвадка от потребители.")
+        st.markdown("Dense 128 → 32 → 128, Sigmoid, **BPR ranking loss** (positive/negative item pairs). Тренира се върху подизвадка от потребители.")
 
         with st.form("ae_form"):
             c1, c2, c3 = st.columns(3)
@@ -825,8 +826,12 @@ with tab4:
                     help="Подизвадка. По-голяма → по-добра матрица, по-бавно."
                 )
             with c3:
+                ae_pairs_per_user = st.number_input(
+                    "pairs_per_user", min_value=1, max_value=100, value=20,
+                    help="BPR двойки (позитивна/негативна) на потребител на епоха. По-голямо → по-силен сигнал, по-бавно."
+                )
                 ae_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
-            ae_comment = st.text_input("Коментар", value="Autoencoder run")
+            ae_comment = st.text_input("Коментар", value="Autoencoder v2 run")
             ae_run = st.form_submit_button("▶ Стартирай", type="primary")
 
         if ae_run:
@@ -863,6 +868,7 @@ with tab4:
                 ae_model = train_autoencoder(
                     ae_matrix, epochs=int(ae_epochs),
                     batch_size=int(ae_batch), patience=int(ae_patience),
+                    pairs_per_user=int(ae_pairs_per_user),
                 )
             finally:
                 _builtins.print = _orig_print
@@ -881,7 +887,7 @@ with tab4:
                  {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(ae_n),
                   "epochs": int(ae_epochs), "batch_size": int(ae_batch),
                   "patience": int(ae_patience), "train_users": int(ae_train_users),
-                  "train_secs": train_secs},
+                  "pairs_per_user": int(ae_pairs_per_user), "train_secs": train_secs},
                  ae_comment)
             st.session_state["exp_result_ae"] = {
                 "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",
@@ -901,9 +907,7 @@ with tab4:
     # ────────────────────────────────────────────────────────────────────────
     elif selected == "NCF":
         st.subheader("NCF — Neural Collaborative Filtering")
-        st.markdown("User + anime embeddings → concat → Dense 64 → Dense 32 → 1. MSE loss, Adam.")
-        st.info("⏱️ Обучението на NCF върху пълния датасет (~6.2 млн. оценки) отнема над 10 минути дори на MacBook Pro с M4 Pro.\n\nПрепоръчвам да намалите броя епохи или да стартирате от командния ред.")
-
+        st.markdown("User + anime embeddings → concat → Dense 64 → Dense 32 → 1. **BPR ranking loss** (positive/negative item pairs), Adam.")
         with st.form("ncf_form"):
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -913,8 +917,12 @@ with tab4:
                 ncf_batch    = st.number_input("Batch size",    min_value=32, max_value=2048, value=256, step=32)
                 ncf_patience = st.number_input("Patience",      min_value=1,  max_value=20,   value=3)
             with c3:
+                ncf_n_per_user = st.number_input(
+                    "n_per_user", min_value=1, max_value=50, value=10,
+                    help="BPR двойки (позитивна/негативна) на потребител на епоха. По-голямо → по-силен сигнал, по-бавно."
+                )
                 ncf_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
-            ncf_comment = st.text_input("Коментар", value="NCF run")
+            ncf_comment = st.text_input("Коментар", value="NCF v2 run")
             ncf_run = st.form_submit_button("▶ Стартирай", type="primary")
 
         if ncf_run:
@@ -940,7 +948,7 @@ with tab4:
                 ncf_model, ncf_umap, ncf_amap = train_ncf(
                     train_df_exp, embed_dim=int(ncf_embed),
                     epochs=int(ncf_epochs), batch_size=int(ncf_batch),
-                    patience=int(ncf_patience),
+                    patience=int(ncf_patience), n_per_user=int(ncf_n_per_user),
                 )
             finally:
                 _builtins.print = _orig_print
@@ -959,7 +967,7 @@ with tab4:
                  {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(ncf_n),
                   "epochs": int(ncf_epochs), "batch_size": int(ncf_batch),
                   "patience": int(ncf_patience), "embed_dim": int(ncf_embed),
-                  "train_secs": train_secs},
+                  "n_per_user": int(ncf_n_per_user), "train_secs": train_secs},
                  ncf_comment)
             st.session_state["exp_result_ncf"] = {
                 "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",
