@@ -1833,4 +1833,10 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
 **Bob:** Read the full file. `M_PERCENTILE = 80` at line 17, used at lines 19, 42, and 47. All three references covered. Confirmed correct.
 
 ---
+
+### User: does streamlit show popups like "help agents write better apps install the official streamlit skills so..." on first run?
+
+**Bob:** That's Streamlit's built-in onboarding toolbar popup. Added `toolbarMode = "minimal"` and `developmentMode = false` to `.streamlit/config.toml` — hides the toolbar and suppresses dev banners on all machines. The "install Streamlit Skills" prompt is a VS Code extension popup, not controllable from app config.
+
+---
   }

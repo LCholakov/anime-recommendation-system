@@ -1,2 +1,9 @@
 [browser]
 gatherUsageStats = false
+
+[global]
+developmentMode = false
+
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
