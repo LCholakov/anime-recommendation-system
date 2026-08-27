@@ -1809,4 +1809,10 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
 **Bob:** Added a filter in `load_tracker()` — before picking the best run per model, filters to only rows where `n_recommendations == 10`. Experimental runs with other @K values are excluded from the comparison table and bar charts.
 
 ---
+
+### User: why early stop at 9 (val_loss trace shown)
+
+**Bob:** Correct behaviour. Best was epoch 6 (0.018841). Epochs 7, 8, 9 were all worse → patience counter hit 3 → stop. Model saved is epoch 6 weights. Epoch 8 (0.018952) looks close but is still above the best, so counts as no improvement.
+
+---
   }
