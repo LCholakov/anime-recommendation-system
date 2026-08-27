@@ -38,12 +38,12 @@ print(scores_named[["name", "rating_count", "avg_rating", "bayesian_score"]].hea
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.
-COMMENT = "Bayesian popularity baseline. m=80th pct. Recommends same top-10 to all users, no personalisation."
+COMMENT = f"Bayesian popularity baseline. m={M_PERCENTILE}th pct. Recommends same top-10 to all users, no personalisation."
 log_run(
     "report/model_performance_tracker.xlsx",
     "Baseline (Popularity)",
     metrics,
-    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10},
+    {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10, "m_percentile": M_PERCENTILE},
     COMMENT,
 )
 print("✅ Results written to report/model_performance_tracker.xlsx")

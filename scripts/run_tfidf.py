@@ -1,11 +1,15 @@
 import sys
 import os
+import pickle
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 from src.data_work.data_loader import load_anime_data
 from src.models.tfidf import build_tfidf_matrix, recommend_tfidf
 from src.models.evaluator import evaluate, log_run
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 # --- load data ---
 anime_df = load_anime_data("data/anime_clean.csv")
@@ -30,6 +34,11 @@ metrics = evaluate(
 print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
+
+# --- save model artifact ---
+with open(os.path.join(MODEL_DIR, "tfidf_matrix.pkl"), "wb") as f:
+    pickle.dump(tfidf_matrix, f)
+print("✅ Saved model/tfidf_matrix.pkl")
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.

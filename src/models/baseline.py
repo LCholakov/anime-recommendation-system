@@ -21,14 +21,14 @@ def split_train_test(ratings_df: pd.DataFrame, min_ratings: int = 5, test_ratio:
     return train, test
 
 
-def compute_bayesian_scores(train_df: pd.DataFrame) -> pd.DataFrame:
+def compute_bayesian_scores(train_df: pd.DataFrame, m_percentile: int = 80) -> pd.DataFrame:
     stats = train_df.groupby("anime_id")["rating"].agg(
         v="count",
         R="mean"
     ).reset_index()
 
     C = train_df["rating"].mean()
-    m = stats["v"].quantile(0.8)
+    m = stats["v"].quantile(m_percentile / 100)
 
     stats["bayesian_score"] = (
         (stats["v"] / (stats["v"] + m)) * stats["R"] +

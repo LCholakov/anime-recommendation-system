@@ -50,8 +50,26 @@ def load_train() -> pd.DataFrame:
 @st.cache_data
 def load_tracker() -> pd.DataFrame:
     df = pd.read_excel(TRACKER_XLSX)
-    # keep only unique model rows (first occurrence per Model name)
-    return df.drop_duplicates(subset=["Model"], keep="first").reset_index(drop=True)
+    metric = "Hit Rate @10"
+    if metric in df.columns:
+        df[metric] = pd.to_numeric(df[metric], errors="coerce")
+        # keep the best (highest Hit Rate) run per model
+        idx = df.groupby("Model")[metric].idxmax()
+        best = df.loc[idx].reset_index(drop=True)
+    else:
+        best = df.drop_duplicates(subset=["Model"], keep="first").reset_index(drop=True)
+    # enforce implementation order
+    order = [
+        "Baseline (Popularity)",
+        "BoW + Cosine Similarity",
+        "TF-IDF + Cosine Similarity",
+        "SVD Collaborative Filtering",
+        "Autoencoder",
+        "NCF (Neural Collaborative Filtering)",
+    ]
+    best["_order"] = best["Model"].map({m: i for i, m in enumerate(order)})
+    best = best.sort_values("_order").drop(columns="_order").reset_index(drop=True)
+    return best
 
 
 # ── cached model builders (load from disk if saved, else build + save) ───────
@@ -173,7 +191,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.header("Анализ на данните")
     st.markdown(
-        "Интерактивни EDA репорти, генерирани от почистения CooperUnion датасет "
+        "Кратки доклади, генерирани от почистения датасет "
         "(~12 хил. аниме, ~7 млн. оценки)."
     )
 
@@ -455,18 +473,114 @@ with tab4:
         from src.models.evaluator import log_run
         log_run(xlsx, name, metrics, hparams, comment)
 
-    def _show_result(key):
-        """Re-render persisted result from session_state."""
+    # tracker model-name mapping (must match what log_run receives)
+    _TRACKER_NAMES = {
+        "Baseline":    "Baseline (Popularity)",
+        "BoW":         "BoW + Cosine Similarity",
+        "TF-IDF":      "TF-IDF + Cosine Similarity",
+        "SVD":         "SVD Collaborative Filtering",
+        "Autoencoder": "Autoencoder",
+        "NCF":         "NCF (Neural Collaborative Filtering)",
+    }
+
+    # columns shown in the history table, per model
+    _MODEL_COLS = {
+        "Baseline":    ["Run #", "Timestamp", "m_percentile", "n_recommendations",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+        "BoW":         ["Run #", "Timestamp", "n_recommendations",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+        "TF-IDF":      ["Run #", "Timestamp", "n_recommendations",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+        "SVD":         ["Run #", "Timestamp", "n_components", "n_recommendations", "Train time (s)",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+        "Autoencoder": ["Run #", "Timestamp", "epochs", "batch_size", "patience",
+                        "train_users", "n_recommendations", "Train time (s)",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+        "NCF":         ["Run #", "Timestamp", "embed_dim", "epochs", "batch_size",
+                        "patience", "n_recommendations", "Train time (s)",
+                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+    }
+
+    def _show_result(key, model_label):
+        """Re-render persisted last-run result + full history table for this model."""
         r = st.session_state.get(key)
-        if not r:
-            return
-        st.success(r["msg"])
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Hit Rate @K",  r["metrics"]["hit_rate"])
-        c2.metric("Precision @K", r["metrics"]["precision"])
-        c3.metric("Recall @K",    r["metrics"]["recall"])
-        if r.get("epochs_log"):
-            st.code(r["epochs_log"])
+        if r:
+            st.success(r["msg"])
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Hit Rate @K",  r["metrics"]["hit_rate"])
+            c2.metric("Precision @K", r["metrics"]["precision"])
+            c3.metric("Recall @K",    r["metrics"]["recall"])
+            if r.get("epochs_log"):
+                st.code(r["epochs_log"])
+
+        # ── history table from tracker ────────────────────────────────────
+        st.subheader("История на изпълненията")
+        try:
+            tracker_df = pd.read_excel(TRACKER_XLSX)
+            model_name = _TRACKER_NAMES.get(model_label, model_label)
+            hist = tracker_df[tracker_df["Model"] == model_name].copy()
+            if hist.empty:
+                st.caption("Няма записани изпълнения за този модел.")
+            else:
+                show_cols = [c for c in _MODEL_COLS.get(model_label, [
+                    "Run #", "Timestamp",
+                    "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment",
+                ]) if c in hist.columns]
+                metric_cols = ["Hit Rate @10", "Precision @10", "Recall @10"]
+                int_cols    = ["Run #", "m_percentile", "n_recommendations",
+                               "epochs", "batch_size", "patience", "embed_dim",
+                               "n_components", "train_users"]
+                display = hist[show_cols].reset_index(drop=True)
+                # force metric columns to float (N/A strings → NaN)
+                for col in metric_cols:
+                    if col in display.columns:
+                        display[col] = pd.to_numeric(display[col], errors="coerce")
+                # force integer columns to nullable Int64 so they show as 80 not 80.0
+                for col in int_cols:
+                    if col in display.columns:
+                        display[col] = pd.to_numeric(display[col], errors="coerce").astype("Int64")
+                # coerce remaining object columns to str so Arrow serialisation never fails
+                for col in display.columns:
+                    if display[col].dtype == object:
+                        display[col] = display[col].fillna("").astype(str)
+                # only format columns that are actually float
+                fmt = {c: "{:.4f}" for c in metric_cols if c in display.columns
+                       and pd.api.types.is_float_dtype(display[c])}
+                styler = display.style.format(fmt, na_rep="—")
+                # faint green→yellow gradient on Hit Rate @10 — no matplotlib needed
+                if "Hit Rate @10" in display.columns and display["Hit Rate @10"].notna().any():
+                    hr_vals = pd.to_numeric(display["Hit Rate @10"], errors="coerce")
+                    lo, hi  = hr_vals.min(), hr_vals.max()
+                    spread  = hi - lo if hi != lo else 0.001
+                    # small pad so equal values get a neutral mid-tone, not solid colour
+                    pad = spread * 0.1
+
+                    def _hr_colour(val):
+                        try:
+                            t = max(0.0, min(1.0, (float(val) - lo + pad) / (spread + 2 * pad)))
+                        except (TypeError, ValueError):
+                            return ""
+                        # interpolate pale orange (255,235,210) → pale yellow (255,255,210) → pale green (215,255,210)
+                        if t < 0.5:
+                            s = t * 2
+                            r = 255
+                            g = int(235 + (255 - 235) * s)
+                            b = 210
+                        else:
+                            s = (t - 0.5) * 2
+                            r = int(255 + (215 - 255) * s)
+                            g = 255
+                            b = 210
+                        return f"background-color: rgb({r},{g},{b})"
+
+                    styler = styler.map(_hr_colour, subset=["Hit Rate @10"])
+                st.dataframe(
+                    styler,
+                    hide_index=True,
+                    width="stretch",
+                )
+        except Exception as _e:
+            st.caption(f"Tracker не може да се зареди: {_e}")
 
     # ── model selector (radio keeps selection across reruns) ─────────────────
     EXP_MODELS = ["Baseline", "BoW", "TF-IDF", "SVD", "Autoencoder", "NCF"]
@@ -521,7 +635,8 @@ with tab4:
             )
             elapsed = round(_time.time() - t0, 1)
             _log(TRACKER_XLSX, "Baseline (Popularity)", metrics,
-                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bl_n)},
+                 {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(bl_n),
+                  "m_percentile": int(bl_m_pct)},
                  bl_comment)
             st.session_state["exp_result_baseline"] = {
                 "msg": f"✅ Готово за {elapsed}s — записано в tracker",
@@ -531,7 +646,7 @@ with tab4:
             st.cache_data.clear()
             st.rerun()
 
-        _show_result("exp_result_baseline")
+        _show_result("exp_result_baseline", "Baseline")
 
     # ────────────────────────────────────────────────────────────────────────
     # BoW
@@ -568,7 +683,7 @@ with tab4:
             st.cache_data.clear()
             st.rerun()
 
-        _show_result("exp_result_bow")
+        _show_result("exp_result_bow", "BoW")
 
     # ────────────────────────────────────────────────────────────────────────
     # TF-IDF
@@ -605,7 +720,7 @@ with tab4:
             st.cache_data.clear()
             st.rerun()
 
-        _show_result("exp_result_tfidf")
+        _show_result("exp_result_tfidf", "TF-IDF")
 
     # ────────────────────────────────────────────────────────────────────────
     # SVD
@@ -658,7 +773,7 @@ with tab4:
             st.cache_resource.clear()
             st.rerun()
 
-        _show_result("exp_result_svd")
+        _show_result("exp_result_svd", "SVD")
 
     # ────────────────────────────────────────────────────────────────────────
     # Autoencoder
@@ -748,7 +863,7 @@ with tab4:
             st.cache_resource.clear()
             st.rerun()
 
-        _show_result("exp_result_ae")
+        _show_result("exp_result_ae", "Autoencoder")
 
     # ────────────────────────────────────────────────────────────────────────
     # NCF
@@ -756,7 +871,7 @@ with tab4:
     elif selected == "NCF":
         st.subheader("NCF — Neural Collaborative Filtering")
         st.markdown("User + anime embeddings → concat → Dense 64 → Dense 32 → 1. MSE loss, Adam.")
-        st.info("⏱️ Обучението на NCF върху пълния датасет (~6.2 млн. оценки) отнема над 10 минути дори на MacBook Pro с M4 Pro. Препоръчваме да намалите броя епохи или да стартирате от командния ред.")
+        st.info("⏱️ Обучението на NCF върху пълния датасет (~6.2 млн. оценки) отнема над 10 минути дори на MacBook Pro с M4 Pro.\n\nПрепоръчвам да намалите броя епохи или да стартирате от командния ред.")
 
         with st.form("ncf_form"):
             c1, c2, c3 = st.columns(3)
@@ -826,4 +941,4 @@ with tab4:
             st.cache_resource.clear()
             st.rerun()
 
-        _show_result("exp_result_ncf")
+        _show_result("exp_result_ncf", "NCF")

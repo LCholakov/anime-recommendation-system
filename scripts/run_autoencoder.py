@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import pickle
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
@@ -8,6 +9,9 @@ import torch
 from src.data_work.data_loader import load_anime_data
 from src.models.autoencoder import build_user_item_matrix, train_autoencoder, recommend_autoencoder
 from src.models.evaluator import evaluate, log_run
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 SEED         = 42
 TRAIN_USERS  = 10000   # subsample for tractable matrix size
@@ -59,6 +63,12 @@ metrics = evaluate(recommend_fn, test_sample, train_sub, n=10)
 print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
+
+# --- save model artifacts ---
+torch.save(model.state_dict(), os.path.join(MODEL_DIR, "autoencoder.pt"))
+with open(os.path.join(MODEL_DIR, "ae_matrix.pkl"), "wb") as f:
+    pickle.dump(matrix, f)
+print("✅ Saved model/autoencoder.pt + model/ae_matrix.pkl")
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.

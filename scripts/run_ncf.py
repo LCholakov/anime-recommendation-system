@@ -1,12 +1,16 @@
 import sys
 import os
 import time
+import pickle
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 import torch
 from src.models.ncf import train_ncf, recommend_ncf
 from src.models.evaluator import evaluate, log_run
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 SEED       = 42
 EPOCHS     = 20
@@ -49,6 +53,12 @@ metrics = evaluate(
 print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
+
+# --- save model artifacts ---
+torch.save(model.state_dict(), os.path.join(MODEL_DIR, "ncf.pt"))
+with open(os.path.join(MODEL_DIR, "ncf_maps.pkl"), "wb") as f:
+    pickle.dump((user_map, anime_map), f)
+print("✅ Saved model/ncf.pt + model/ncf_maps.pkl")
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.

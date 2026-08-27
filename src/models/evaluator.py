@@ -64,6 +64,7 @@ def log_run(
         hyperparams.get("split",             "leave-one-out"),
         hyperparams.get("min_ratings",       5),
         hyperparams.get("n_recommendations", 10),
+        hyperparams.get("m_percentile",      NA),
         hyperparams.get("epochs",            NA),
         hyperparams.get("batch_size",        NA),
         hyperparams.get("patience",          NA),
@@ -79,6 +80,7 @@ def log_run(
     headers = [
         "Run #", "Timestamp", "Model", "Split",
         "min_ratings", "n_recommendations",
+        "m_percentile",
         "epochs", "batch_size", "patience", "embed_dim", "n_components", "train_users",
         "Train time (s)",
         "Hit Rate @10", "Precision @10", "Recall @10",
@@ -114,8 +116,10 @@ def append_to_tracker(xlsx_path: str, row_data: list, headers: list) -> None:
     cell_border   = Border(left=border_side, right=border_side, top=border_side, bottom=border_side)
     center        = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    # write headers if sheet is empty
-    if ws.max_row == 1 and ws.max_column == 1 and ws.cell(1, 1).value is None:
+    sheet_is_empty = ws.max_row == 1 and ws.max_column == 1 and ws.cell(1, 1).value is None
+
+    if sheet_is_empty:
+        # Write full header row from scratch
         for col, h in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col, value=h)
             cell.font = header_font
@@ -123,16 +127,39 @@ def append_to_tracker(xlsx_path: str, row_data: list, headers: list) -> None:
             cell.alignment = center
             cell.border = cell_border
         ws.row_dimensions[1].height = 30
+        col_index = {h: i + 1 for i, h in enumerate(headers)}
+    else:
+        # Read existing header row to build column-name → column-number map.
+        # Add any new headers that don't exist yet (e.g. "Train time (s)").
+        col_index = {}
+        for cell in ws[1]:
+            if cell.value is not None:
+                col_index[cell.value] = cell.column
+        next_col = max(col_index.values()) + 1 if col_index else 1
+        for h in headers:
+            if h not in col_index:
+                cell = ws.cell(row=1, column=next_col, value=h)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = center
+                cell.border = cell_border
+                col_index[h] = next_col
+                next_col += 1
 
     next_row = ws.max_row + 1 if ws.cell(1, 1).value is not None else 2
 
-    for col, val in enumerate(row_data, 1):
+    # Write each value into the correct column by name
+    for h, val in zip(headers, row_data):
+        col = col_index.get(h)
+        if col is None:
+            continue
         cell = ws.cell(row=next_row, column=col, value=val)
         cell.fill = row_fill
         cell.alignment = center
         cell.border = cell_border
 
-    for col in range(1, len(headers) + 1):
+    # Auto-fit column widths across all used columns
+    for h, col in col_index.items():
         max_len = max(
             len(str(ws.cell(row=r, column=col).value or ""))
             for r in range(1, next_row + 1)

@@ -1,11 +1,15 @@
 import sys
 import os
+import pickle
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 from src.data_work.data_loader import load_anime_data
 from src.models.svd import build_user_item_matrix, train_svd, recommend_svd
 from src.models.evaluator import evaluate, log_run
+
+MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 # --- load data ---
 anime_df = load_anime_data("data/anime_clean.csv")
@@ -19,7 +23,7 @@ N_COMPONENTS = 50
 print(f"Building user-item matrix and training SVD (n_components={N_COMPONENTS})...")
 matrix = build_user_item_matrix(train)
 _t0 = time.time()
-reconstructed, _, _ = train_svd(matrix, n_components=N_COMPONENTS)
+reconstructed, Vt, anime_cols = train_svd(matrix, n_components=N_COMPONENTS)
 TRAIN_SECS = round(time.time() - _t0, 1)
 print(f"  Matrix shape: {matrix.shape}")
 print(f"  Train time: {TRAIN_SECS}s")
@@ -38,6 +42,11 @@ metrics = evaluate(
 print(f"  Hit Rate : {metrics['hit_rate']}")
 print(f"  Precision: {metrics['precision']}")
 print(f"  Recall   : {metrics['recall']}")
+
+# --- save model artifact ---
+with open(os.path.join(MODEL_DIR, "svd_reconstructed.pkl"), "wb") as f:
+    pickle.dump((reconstructed, Vt, anime_cols), f)
+print("✅ Saved model/svd_reconstructed.pkl")
 
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.
