@@ -74,8 +74,42 @@ def run_step(label: str, script: str) -> None:
     print(f"\n✅  Done in {elapsed:.1f}s")
 
 
+def _ensure_raw_data() -> None:
+    """Check that anime.csv and rating.csv exist; extract from data.zip if not."""
+    data_dir  = os.path.join(ROOT, "data")
+    required  = ["anime.csv", "rating.csv"]
+    missing   = [f for f in required if not os.path.exists(os.path.join(data_dir, f))]
+
+    if not missing:
+        return
+
+    zip_path = os.path.join(data_dir, "data.zip")
+    if not os.path.exists(zip_path):
+        print(f"❌  Missing data files {missing} and data/data.zip not found.")
+        print("    Download data.zip and place it in the data/ folder, then re-run.")
+        sys.exit(1)
+
+    import zipfile
+    _banner("Extracting data/data.zip")
+    with zipfile.ZipFile(zip_path, "r") as zf:
+        # extract only the missing files so we don't overwrite anything already present
+        for name in missing:
+            if name in zf.namelist():
+                zf.extract(name, data_dir)
+                print(f"  ✅ Extracted {name}")
+            else:
+                print(f"  ⚠️  {name} not found inside data.zip")
+
+    still_missing = [f for f in required if not os.path.exists(os.path.join(data_dir, f))]
+    if still_missing:
+        print(f"❌  Could not obtain {still_missing} from data.zip. Aborting.")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     total_start = time.time()
+
+    _ensure_raw_data()
 
     for label, script in STEPS:
         run_step(label, script)

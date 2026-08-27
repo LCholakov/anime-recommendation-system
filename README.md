@@ -4,10 +4,12 @@ Final project for Introduction to deep learning university course. Will (attempt
 Install requirements from `requirements.txt`.
 Run everything with `python scripts/run_all.py`
 
-
 -----------------------------------------
 
-Script to run all basically does: 
+Script run_all basically does the following: 
+
+Check if data files anime.csv and rating.csv exist in data dir.
+If not, extract data/data.zip to place raw data files there.
 
 Clean data with `python scripts/clean_data.py` 
 
@@ -24,3 +26,5 @@ NCF `python scripts/run_baseline.py`
 
 Start UI with
 `streamlit run app/streamlit_app.py`
+
+The above steps can be executed manually as well. 

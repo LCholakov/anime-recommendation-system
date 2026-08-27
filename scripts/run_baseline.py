@@ -14,8 +14,9 @@ test     = pd.read_csv("data/test.csv")
 print(f"Train: {len(train)} rows | Test: {len(test)} rows")
 
 # --- compute scores ---
-print("Computing Bayesian scores from training data...")
-scores = compute_bayesian_scores(train)
+M_PERCENTILE = 80
+print(f"Computing Bayesian scores from training data (m_percentile={M_PERCENTILE})...")
+scores = compute_bayesian_scores(train, m_percentile=M_PERCENTILE)
 scores_named = scores.merge(anime_df[["anime_id", "name", "genre"]], on="anime_id", how="left")
 scores_named = scores_named.sort_values("bayesian_score", ascending=False).reset_index(drop=True)
 scores_named.to_csv("data/baseline_scores.csv", index=False)

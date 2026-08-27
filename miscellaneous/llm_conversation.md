@@ -1815,4 +1815,22 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
 **Bob:** Correct behaviour. Best was epoch 6 (0.018841). Epochs 7, 8, 9 were all worse → patience counter hit 3 → stop. Model saved is epoch 6 weights. Epoch 8 (0.018952) looks close but is still above the best, so counts as no improvement.
 
 ---
+
+### User: at the beginning of run_all add check if the data files exist. if not exist check if data.zip exists and extract it so the data files are in the correct location
+
+**Bob:** Added `_ensure_raw_data()` to `scripts/run_all.py`, called before the pipeline loop. Checks for `anime.csv` and `rating.csv` in `data/`; if either is missing, looks for `data/data.zip` and extracts only the missing files. If the zip is also absent, prints a clear message and exits. The zip contains exactly `anime.csv` and `rating.csv` at the root level, so `zf.extract(name, data_dir)` places them directly in `data/`.
+
+---
+
+### User: ran from scratch on a different laptop — NameError: name 'M_PERCENTILE' is not defined in run_baseline.py
+
+**Bob:** The `M_PERCENTILE = 80` constant and the updated `compute_bayesian_scores(train, m_percentile=M_PERCENTILE)` call were never actually written to `run_baseline.py` — the earlier diff silently failed to apply. Fixed: added `M_PERCENTILE = 80` before the scores block and updated the `compute_bayesian_scores` call.
+
+---
+
+### User: you sure? don't wanna go through this a second time
+
+**Bob:** Read the full file. `M_PERCENTILE = 80` at line 17, used at lines 19, 42, and 47. All three references covered. Confirmed correct.
+
+---
   }
