@@ -47,8 +47,24 @@ def load_train() -> pd.DataFrame:
     return pd.read_csv(TRAIN_CSV)
 
 
+_MODEL_ORDER = [
+    "Baseline (Popularity)",
+    "BoW + Cosine Similarity",
+    "TF-IDF + Cosine Similarity",
+    "SVD Collaborative Filtering",
+    "Autoencoder",
+    "NCF (Neural Collaborative Filtering)",
+]
+
+def _apply_model_order(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    df["_order"] = df["Model"].map({m: i for i, m in enumerate(_MODEL_ORDER)})
+    return df.sort_values("_order").drop(columns="_order").reset_index(drop=True)
+
+
 @st.cache_data
 def load_tracker() -> pd.DataFrame:
+    """Return one row per model — the best (highest Hit Rate @10) run."""
     df = pd.read_excel(TRACKER_XLSX)
     metric = "Hit Rate @10"
     if metric in df.columns:
@@ -61,18 +77,19 @@ def load_tracker() -> pd.DataFrame:
         best = df.loc[idx].reset_index(drop=True)
     else:
         best = df.drop_duplicates(subset=["Model"], keep="first").reset_index(drop=True)
-    # enforce implementation order
-    order = [
-        "Baseline (Popularity)",
-        "BoW + Cosine Similarity",
-        "TF-IDF + Cosine Similarity",
-        "SVD Collaborative Filtering",
-        "Autoencoder",
-        "NCF (Neural Collaborative Filtering)",
-    ]
-    best["_order"] = best["Model"].map({m: i for i, m in enumerate(order)})
-    best = best.sort_values("_order").drop(columns="_order").reset_index(drop=True)
-    return best
+    return _apply_model_order(best)
+
+
+@st.cache_data
+def load_tracker_all() -> pd.DataFrame:
+    """Return all n_recommendations=10 runs (unsorted within model)."""
+    df = pd.read_excel(TRACKER_XLSX)
+    metric = "Hit Rate @10"
+    if metric in df.columns:
+        df[metric] = pd.to_numeric(df[metric], errors="coerce")
+    if "n_recommendations" in df.columns:
+        df = df[pd.to_numeric(df["n_recommendations"], errors="coerce") == 10]
+    return df.reset_index(drop=True)
 
 
 # ── cached model builders (load from disk if saved, else build + save) ───────
@@ -137,7 +154,7 @@ def get_autoencoder():
         return model, matrix
     train = load_train()
     matrix = build_user_item_matrix(train)
-    model = train_autoencoder(matrix, epochs=20, batch_size=128, patience=3)
+    model = train_autoencoder(matrix, epochs=20, batch_size=128, patience=3, alpha=5.0)
     torch.save(model.state_dict(), AE_PT)
     with open(AE_MATRIX_PKL, "wb") as f:
         pickle.dump(matrix, f)
@@ -222,9 +239,10 @@ with tab1:
 # ════════════════════════════════════════════════════════════════════════════
 with tab2:
     st.header("Сравнение на модели")
-    st.markdown("Метрики, изчислени върху произволна извадка от 1 000 потребители — Hit Rate / Precision / Recall @10.")
+    st.markdown("Метрики, изчислени върху произволна извадка от 1 000 потребители — Hit Rate @10.")
 
-    tracker = load_tracker()
+    tracker     = load_tracker()
+    tracker_all = load_tracker_all()
 
     # ── metrics table ────────────────────────────────────────────────────────
     st.subheader("Таблица с резултати")
@@ -244,15 +262,82 @@ with tab2:
 
     # ── bar charts ───────────────────────────────────────────────────────────
     st.subheader("Визуално сравнение")
-    chart_metrics = [c for c in ["Hit Rate @10", "Precision @10", "Recall @10"]
-                     if c in tracker.columns]
 
-    cols = st.columns(len(chart_metrics))
-    for col, metric in zip(cols, chart_metrics):
-        with col:
-            chart_data = tracker[["Model", metric]].set_index("Model")
-            st.bar_chart(chart_data, width="stretch")
-            st.caption(metric)
+    # Short display labels so bars are readable
+    _short = {
+        "Baseline (Popularity)":              "Baseline",
+        "BoW + Cosine Similarity":            "BoW",
+        "TF-IDF + Cosine Similarity":         "TF-IDF",
+        "SVD Collaborative Filtering":        "SVD",
+        "Autoencoder":                        "AE",
+        "NCF (Neural Collaborative Filtering)":"NCF",
+    }
+
+    # Build second-best and avg-top-3 per model, in canonical order
+    metric = "Hit Rate @10"
+    _second_best = {}
+    _avg_top3    = {}
+    for model_name in _MODEL_ORDER:
+        runs = (
+            tracker_all[tracker_all["Model"] == model_name][metric]
+            .dropna()
+            .sort_values(ascending=False)
+            .reset_index(drop=True)
+        )
+        _second_best[model_name] = float(runs.iloc[1]) if len(runs) >= 2 else None
+        top3 = runs.iloc[:3]
+        _avg_top3[model_name]    = float(top3.mean()) if len(top3) >= 1 else None
+
+    # labels in canonical order (only models present in tracker)
+    labels = [_short.get(m, m) for m in tracker["Model"]]
+
+    import matplotlib.pyplot as _plt
+
+    # `tracker["Model"]` is already in canonical order from load_tracker()
+    _chart_models = tracker["Model"].tolist()
+    _best_map     = dict(zip(tracker["Model"], tracker[metric]))
+
+    def _make_bar(ax, values_map, color, title):
+        vals      = [values_map.get(m) for m in _chart_models]
+        plot_vals = [v if v is not None else 0.0 for v in vals]
+        bars = ax.bar(labels, plot_vals, color=color)
+        y_max = max((v for v in plot_vals if v), default=0.01) * 1.35
+        ax.set_ylim(0, y_max)
+        ax.set_title(title, fontsize=8, pad=4)
+        ax.tick_params(axis="x", labelsize=7)
+        ax.tick_params(axis="y", labelsize=7)
+        for spine in ["top", "right"]:
+            ax.spines[spine].set_visible(False)
+        for bar, val in zip(bars, vals):
+            label_txt = f"{val:.3f}" if val is not None else "n/a"
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + y_max * 0.02,
+                label_txt, ha="center", va="bottom", fontsize=6,
+            )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        fig, ax = _plt.subplots(figsize=(3, 3))
+        _make_bar(ax, _best_map, "#4C78A8", "Best — Hit Rate @10")
+        _plt.tight_layout()
+        st.pyplot(fig, width="stretch")
+        _plt.close(fig)
+
+    with col2:
+        fig, ax = _plt.subplots(figsize=(3, 3))
+        _make_bar(ax, _second_best, "#72A0C1", "2nd Best — Hit Rate @10")
+        _plt.tight_layout()
+        st.pyplot(fig, width="stretch")
+        _plt.close(fig)
+
+    with col3:
+        fig, ax = _plt.subplots(figsize=(3, 3))
+        _make_bar(ax, _avg_top3, "#A8C8A0", "Avg Top-3 — Hit Rate @10")
+        _plt.tight_layout()
+        st.pyplot(fig, width="stretch")
+        _plt.close(fig)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -422,11 +507,22 @@ with tab3:
             with st.spinner("Зареждане…"):
                 from src.models.autoencoder import recommend_autoencoder
                 ae_model, ae_matrix = get_autoencoder()
-                # build a one-row sparse vector aligned to the cached ae_matrix columns
-                user_row = pd.Series(0.0, index=ae_matrix.columns)
+                # Build a one-row vector aligned to the cached ae_matrix columns.
+                # The matrix was built with center=True: each row is mean-centred
+                # and scaled by /10.  We must apply the same transform to the
+                # synthetic user so the model receives in-distribution input.
+                raw_row = pd.Series(0.0, index=ae_matrix.columns)
                 for p in picks:
-                    if p["anime_id"] in user_row.index:
-                        user_row[p["anime_id"]] = p["rating"] / 10.0
+                    if p["anime_id"] in raw_row.index:
+                        raw_row[p["anime_id"]] = float(p["rating"])
+                obs_vals = raw_row[raw_row != 0]
+                if len(obs_vals) > 0:
+                    row_mean = obs_vals.mean()
+                    centered = raw_row.copy()
+                    centered[raw_row != 0] = raw_row[raw_row != 0] - row_mean
+                    user_row = centered / 10.0
+                else:
+                    user_row = raw_row
                 ae_matrix_aug = pd.concat([ae_matrix, pd.DataFrame([user_row], index=[uid])])
                 recs = recommend_autoencoder(uid, ae_model, ae_matrix_aug, augmented_train, n=10)
                 show_recs(recs, "predicted_score")
@@ -497,7 +593,7 @@ with tab4:
         "SVD":         ["Run #", "Timestamp", "n_components", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
         "Autoencoder": ["Run #", "Timestamp", "epochs", "batch_size", "patience",
-                        "train_users", "pairs_per_user", "n_recommendations", "Train time (s)",
+                        "train_users", "alpha", "n_recommendations", "Train time (s)",
                         "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
         "NCF":         ["Run #", "Timestamp", "embed_dim", "epochs", "batch_size",
                         "patience", "n_per_user", "n_recommendations", "Train time (s)",
@@ -534,7 +630,7 @@ with tab4:
                                "min_rating_threshold",
                                "epochs", "batch_size", "patience", "embed_dim",
                                "n_components", "train_users",
-                               "pairs_per_user", "n_per_user"]
+                               "n_per_user"]
                 display = hist[show_cols].reset_index(drop=True)
                 # replace bare None with pd.NA so downstream coercions treat them uniformly
                 display = display.infer_objects(copy=False).fillna(value=pd.NA)
@@ -812,26 +908,26 @@ with tab4:
     # ────────────────────────────────────────────────────────────────────────
     elif selected == "Autoencoder":
         st.subheader("Autoencoder")
-        st.markdown("Dense 128 → 32 → 128, Sigmoid, **BPR ranking loss** (positive/negative item pairs). Тренира се върху подизвадка от потребители.")
+        st.markdown("Dense 128 → 32 → 128, Sigmoid, **weighted MSE** (implicit feedback, confidence weight α), mean-centred user rows. Тренира се върху подизвадка от потребители.")
 
         with st.form("ae_form"):
             c1, c2, c3 = st.columns(3)
             with c1:
-                ae_epochs      = st.number_input("Епохи (макс)", min_value=1,   max_value=100,   value=20)
+                ae_epochs      = st.number_input("Епохи (макс)", min_value=1,   max_value=500,   value=200)
                 ae_batch       = st.number_input("Batch size",   min_value=16,  max_value=512,   value=128, step=16)
             with c2:
-                ae_patience    = st.number_input("Patience",     min_value=1,   max_value=20,    value=3)
+                ae_patience    = st.number_input("Patience",     min_value=1,   max_value=30,    value=10)
                 ae_train_users = st.number_input(
                     "Train потребители", min_value=500, max_value=60000, value=10000, step=500,
                     help="Подизвадка. По-голяма → по-добра матрица, по-бавно."
                 )
             with c3:
-                ae_pairs_per_user = st.number_input(
-                    "pairs_per_user", min_value=1, max_value=100, value=20,
-                    help="BPR двойки (позитивна/негативна) на потребител на епоха. По-голямо → по-силен сигнал, по-бавно."
+                ae_alpha = st.number_input(
+                    "alpha", min_value=0.1, max_value=20.0, value=5.0, step=0.5,
+                    help="Тежест на наблюдаваните елементи в weighted MSE. По-голямо → по-силен акцент върху оценените аниме."
                 )
                 ae_n = st.number_input("Препоръки @K", min_value=1, max_value=50, value=10)
-            ae_comment = st.text_input("Коментар", value="Autoencoder v2 run")
+            ae_comment = st.text_input("Коментар", value="Autoencoder v3 run — target>0 mask, epochs=200, patience=10")
             ae_run = st.form_submit_button("▶ Стартирай", type="primary")
 
         if ae_run:
@@ -868,7 +964,7 @@ with tab4:
                 ae_model = train_autoencoder(
                     ae_matrix, epochs=int(ae_epochs),
                     batch_size=int(ae_batch), patience=int(ae_patience),
-                    pairs_per_user=int(ae_pairs_per_user),
+                    alpha=float(ae_alpha),
                 )
             finally:
                 _builtins.print = _orig_print
@@ -887,7 +983,7 @@ with tab4:
                  {"split": "leave-one-out", "min_ratings": 5, "n_recommendations": int(ae_n),
                   "epochs": int(ae_epochs), "batch_size": int(ae_batch),
                   "patience": int(ae_patience), "train_users": int(ae_train_users),
-                  "pairs_per_user": int(ae_pairs_per_user), "train_secs": train_secs},
+                  "alpha": float(ae_alpha), "train_secs": train_secs},
                  ae_comment)
             st.session_state["exp_result_ae"] = {
                 "msg": f"✅ Готово за {elapsed}s (тренировка: {train_secs}s) — записано в tracker",

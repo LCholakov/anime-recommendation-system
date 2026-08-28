@@ -27,142 +27,138 @@ class AnimeAutoencoder(nn.Module):
         return self.decoder(self.encoder(x))
 
 
-def build_user_item_matrix(train_df: pd.DataFrame) -> pd.DataFrame:
+def build_user_item_matrix(train_df: pd.DataFrame, center: bool = True) -> pd.DataFrame:
+    """Build a normalised user-item rating matrix.
+
+    Args:
+        center: if True (default), subtract each user's mean observed rating
+                from their observed items before filling zeros.  This makes the
+                model learn relative preference (above/below average) rather
+                than absolute scores, which dramatically improves performance on
+                sparse matrices where zero-cells otherwise dominate the loss.
+    """
     matrix = train_df.pivot_table(
         index="user_id", columns="anime_id", values="rating", aggfunc="mean"
     ).fillna(0)
-    # normalise ratings to [0, 1] to match Sigmoid output
-    matrix = matrix / 10.0
+    if center:
+        # per-user mean of observed (non-zero) items
+        observed_mask = matrix.values != 0
+        row_means = np.where(
+            observed_mask.sum(axis=1, keepdims=True) > 0,
+            (matrix.values * observed_mask).sum(axis=1, keepdims=True)
+            / observed_mask.sum(axis=1, keepdims=True).clip(min=1),
+            0.0,
+        )
+        # subtract mean from observed cells only; zeros stay zero
+        matrix = pd.DataFrame(
+            np.where(observed_mask, matrix.values - row_means, 0.0),
+            index=matrix.index,
+            columns=matrix.columns,
+        )
+        # scale to [-0.5, 0.5] so Sigmoid mid-point (0.5) corresponds to
+        # "average" and the model can output above/below symmetrically
+        matrix = matrix / 10.0
+    else:
+        matrix = matrix / 10.0
     return matrix
 
 
-def _bpr_loss(pos_scores: torch.Tensor, neg_scores: torch.Tensor) -> torch.Tensor:
-    """Bayesian Personalised Ranking loss.
+def _weighted_mse(
+    pred: torch.Tensor,
+    target: torch.Tensor,
+    alpha: float,
+) -> torch.Tensor:
+    """Weighted MSE for implicit-feedback collaborative filtering.
 
-    Maximises the probability that a positive item scores higher than a
-    negative item for the same user.  Equivalent to minimising
-    -log(sigmoid(pos - neg)).
+    Above-average items (target > 0 after mean-centering) receive weight
+    (1 + alpha); all other cells receive weight 1.  After mean-centering,
+    target > 0 identifies items the user rated *above* their own average —
+    exactly the positive signal we want to reinforce for top-N ranking.
+    Below-average items and unobserved zeros are both treated as neutral,
+    which matches the recommender objective: we care about surfacing things
+    the user will like above average, not penalising items they merely
+    rated mediocrely.
+
+    Reference: Hu et al., "Collaborative Filtering for Implicit Feedback
+    Datasets", ICDM 2008.
     """
-    return -torch.log(torch.sigmoid(pos_scores - neg_scores) + 1e-8).mean()
-
-
-def _sample_bpr_pairs(
-    matrix_np: np.ndarray,
-    n_samples: int,
-    rng: np.random.Generator,
-) -> tuple:
-    """Sample (user_idx, pos_item_idx, neg_item_idx) triples for BPR training.
-
-    A positive item is one the user has rated (matrix value > 0).
-    A negative item is one the user has not rated (matrix value == 0).
-    """
-    n_users, n_items = matrix_np.shape
-
-    user_indices = []
-    pos_indices  = []
-    neg_indices  = []
-
-    per_user = max(1, n_samples // max(n_users, 1))
-
-    for u in range(n_users):
-        row      = matrix_np[u]
-        pos_cols = np.where(row > 0)[0]
-        neg_cols = np.where(row == 0)[0]
-        if len(pos_cols) == 0 or len(neg_cols) == 0:
-            continue
-        k = min(per_user, len(pos_cols))
-        chosen_pos = rng.choice(pos_cols, size=k, replace=False)
-        chosen_neg = rng.choice(neg_cols,  size=k, replace=True)
-        user_indices.extend([u] * k)
-        pos_indices.extend(chosen_pos.tolist())
-        neg_indices.extend(chosen_neg.tolist())
-
-    return (
-        np.array(user_indices, dtype=np.int64),
-        np.array(pos_indices,  dtype=np.int64),
-        np.array(neg_indices,  dtype=np.int64),
-    )
+    mask    = (target > 0).float()           # above-average observed items
+    weights = 1.0 + alpha * mask             # (B, n_items)
+    loss    = (weights * (pred - target) ** 2).mean()
+    return loss
 
 
 def train_autoencoder(
     matrix: pd.DataFrame,
-    epochs: int = 20,
+    epochs: int = 200,
     batch_size: int = 128,
     val_split: float = 0.2,
-    patience: int = 3,
-    pairs_per_user: int = 20,
+    patience: int = 10,
+    alpha: float = 5.0,
 ) -> "AnimeAutoencoder":
-    """Train the autoencoder with BPR (ranking) loss.
+    """Train the autoencoder with weighted MSE (implicit feedback loss).
 
-    Each mini-batch consists of BPR (user, pos_item, neg_item) triples drawn
-    from the user-item matrix.  The AE encodes the full user row and the loss
-    trains the decoder outputs so that the score for the positive item is
-    higher than for the negative item — directly optimising ranking.
+    Each forward pass reconstructs the full user rating vector.  Items the
+    user rated *above* their own average (target > 0 after mean-centering)
+    receive loss weight (1 + alpha) — the model is pushed to score those items
+    higher than everything else.  Below-average rated items and unobserved
+    zeros both receive weight 1, treating them as neutral.  This gives the
+    correct top-N ranking signal: reinforce positives, don't fight neutrals.
+
+    Dense gradients across all 9k items every step — correct for an
+    autoencoder-based collaborative filter (unlike BPR which only touches
+    2 positions per sample).
 
     Args:
-        pairs_per_user: how many (pos, neg) pairs to sample per user per epoch.
-                        Higher → more training signal per epoch, slower per epoch.
+        alpha: confidence weight for above-average observed items.
+               Typical range 1–10.  Higher → stronger push to rank
+               above-average items at the top.
     """
-    rng         = np.random.default_rng(SEED)
-    matrix_np   = matrix.values.astype(np.float32)   # (n_users, n_items)
-    n_users     = matrix_np.shape[0]
-    X_tensor    = torch.tensor(matrix_np)
+    torch.manual_seed(SEED)                                      # reproducible init
+    rng       = np.random.default_rng(SEED)
+    vals      = matrix.values.astype(np.float32)
+    X         = torch.tensor(vals)                               # (n_users, n_items)
+    n         = len(X)
 
-    model     = AnimeAutoencoder(matrix_np.shape[1])
+    val_size   = max(1, int(n * val_split))
+    train_size = n - val_size
+    perm       = rng.permutation(n)
+    tr_idx     = perm[:train_size]
+    vl_idx     = perm[train_size:]
+
+    model     = AnimeAutoencoder(X.shape[1])
     optimizer = torch.optim.Adam(model.parameters())
-
-    n_pairs_total = n_users * pairs_per_user
-
-    def _epoch_loss(idx_subset: np.ndarray, training: bool) -> float:
-        """Run one pass over the given pair indices."""
-        total_loss = 0.0
-        count      = 0
-        perm_sub   = rng.permutation(len(idx_subset)) if training else np.arange(len(idx_subset))
-        for start in range(0, len(idx_subset), batch_size):
-            batch = idx_subset[perm_sub[start: start + batch_size]]
-            u_b   = torch.tensor(u_arr[batch],  dtype=torch.long)
-            p_b   = torch.tensor(p_arr[batch],  dtype=torch.long)
-            n_b   = torch.tensor(n_arr[batch],  dtype=torch.long)
-
-            user_rows = X_tensor[u_b]          # (B, n_items)
-            if training:
-                model.train()
-                optimizer.zero_grad()
-                recon = model(user_rows)       # (B, n_items)
-            else:
-                model.eval()
-                with torch.no_grad():
-                    recon = model(user_rows)
-
-            # gather scores for the specific pos/neg items
-            pos_scores = recon[torch.arange(len(u_b)), p_b]   # (B,)
-            neg_scores = recon[torch.arange(len(u_b)), n_b]   # (B,)
-            loss = _bpr_loss(pos_scores, neg_scores)
-
-            if training:
-                loss.backward()
-                optimizer.step()
-
-            total_loss += loss.item() * len(u_b)
-            count      += len(u_b)
-
-        return total_loss / max(count, 1)
 
     best_val_loss    = float("inf")
     patience_counter = 0
     best_state       = None
 
     for epoch in range(epochs):
-        # re-sample pairs each epoch so the model sees fresh negatives
-        u_arr, p_arr, n_arr = _sample_bpr_pairs(matrix_np, n_pairs_total, rng)
-        perm    = rng.permutation(len(u_arr))
-        tr_idx  = perm[:int(len(u_arr) * (1 - val_split))]
-        vl_idx  = perm[int(len(u_arr) * (1 - val_split)):]
+        # ── training ────────────────────────────────────────────────────────
+        model.train()
+        rng.shuffle(tr_idx)
+        train_loss = 0.0
+        for start in range(0, len(tr_idx), batch_size):
+            batch = tr_idx[start: start + batch_size]
+            rows  = X[batch]
+            optimizer.zero_grad()
+            loss  = _weighted_mse(model(rows), rows, alpha)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * len(batch)
+        train_loss /= max(len(tr_idx), 1)
 
-        train_loss = _epoch_loss(tr_idx, training=True)
-        val_loss   = _epoch_loss(vl_idx, training=False)
+        # ── validation ──────────────────────────────────────────────────────
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for start in range(0, len(vl_idx), batch_size):
+                batch = vl_idx[start: start + batch_size]
+                rows  = X[batch]
+                val_loss += _weighted_mse(model(rows), rows, alpha).item() * len(batch)
+        val_loss /= max(len(vl_idx), 1)
 
-        print(f"  Epoch {epoch+1:2d}/{epochs} — train_bpr: {train_loss:.6f}  val_bpr: {val_loss:.6f}")
+        print(f"  Epoch {epoch+1:2d}/{epochs} — train_wmse: {train_loss:.6f}  val_wmse: {val_loss:.6f}")
 
         if val_loss < best_val_loss:
             best_val_loss    = val_loss

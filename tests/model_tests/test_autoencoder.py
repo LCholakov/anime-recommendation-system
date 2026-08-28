@@ -48,9 +48,13 @@ class TestBuildUserItemMatrix(unittest.TestCase):
         result = build_user_item_matrix(self.train_df)
         self.assertEqual(result.loc[3, 10], 0)
 
-    def test_when_called_then_values_are_normalised_between_0_and_1(self):
-        result = build_user_item_matrix(self.train_df)
-        self.assertTrue((result.values >= 0).all() and (result.values <= 1).all())
+    def test_when_called_then_values_are_normalised_within_range(self):
+        # with centering (default): values in [-0.5, 0.5]
+        result_centered = build_user_item_matrix(self.train_df, center=True)
+        self.assertTrue((result_centered.values >= -0.5).all() and (result_centered.values <= 0.5).all())
+        # without centering: values in [0, 1]
+        result_raw = build_user_item_matrix(self.train_df, center=False)
+        self.assertTrue((result_raw.values >= 0).all() and (result_raw.values <= 1).all())
 
 
 class TestTrainAutoencoder(unittest.TestCase):

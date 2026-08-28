@@ -45,6 +45,9 @@ def _build_positive_sets(train_df: pd.DataFrame, user_map: dict, anime_map: dict
     return pos_sets
 
 
+_ALL_ANIME = None  # type: np.ndarray | None — module-level cache, reset each train call
+
+
 def _sample_bpr_batches(
     pos_sets: list,
     n_anime: int,
@@ -53,9 +56,13 @@ def _sample_bpr_batches(
 ) -> tuple:
     """Sample (user_idx, pos_anime_idx, neg_anime_idx) triples for BPR.
 
-    For each user, draw n_per_user positives and match each with one random
-    negative (an anime the user has not rated).
+    Negatives are drawn by vectorised array indexing instead of a per-sample
+    rejection loop, making large n_per_user values fast.
     """
+    global _ALL_ANIME
+    if _ALL_ANIME is None or len(_ALL_ANIME) != n_anime:
+        _ALL_ANIME = np.arange(n_anime, dtype=np.int64)
+
     users_out = []
     pos_out   = []
     neg_out   = []
@@ -63,23 +70,25 @@ def _sample_bpr_batches(
     for u_idx, pos in enumerate(pos_sets):
         if not pos:
             continue
-        pos_list = list(pos)
-        k        = min(n_per_user, len(pos_list))
-        chosen   = rng.choice(pos_list, size=k, replace=False)
-        for p in chosen:
-            # sample a negative not in the positive set
-            while True:
-                n = int(rng.integers(0, n_anime))
-                if n not in pos:
-                    break
-            users_out.append(u_idx)
-            pos_out.append(p)
-            neg_out.append(n)
+        pos_arr  = np.array(list(pos), dtype=np.int64)
+        neg_pool = np.setdiff1d(_ALL_ANIME, pos_arr, assume_unique=True)
+        if len(neg_pool) == 0:
+            continue
+        k         = min(n_per_user, len(pos_arr))
+        chosen_pos = rng.choice(pos_arr,  size=k, replace=False)
+        chosen_neg = rng.choice(neg_pool, size=k, replace=True)
+        users_out.append(np.full(k, u_idx, dtype=np.int64))
+        pos_out.append(chosen_pos)
+        neg_out.append(chosen_neg)
+
+    if not users_out:
+        empty = np.array([], dtype=np.int64)
+        return empty, empty, empty
 
     return (
-        np.array(users_out, dtype=np.int64),
-        np.array(pos_out,   dtype=np.int64),
-        np.array(neg_out,   dtype=np.int64),
+        np.concatenate(users_out),
+        np.concatenate(pos_out),
+        np.concatenate(neg_out),
     )
 
 
@@ -103,6 +112,7 @@ def train_ncf(
         n_per_user: positive pairs to draw per user per epoch.
                     Higher → more training signal per epoch, slower per epoch.
     """
+    torch.manual_seed(SEED)                  # reproducible init regardless of prior torch ops
     rng = np.random.default_rng(SEED)
     user_map, anime_map = encode_ids(train_df)
     n_anime  = len(anime_map)

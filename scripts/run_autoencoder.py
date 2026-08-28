@@ -13,14 +13,14 @@ from src.models.evaluator import evaluate, log_run
 MODEL_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-SEED            = 42
-TRAIN_USERS     = 10000   # subsample for tractable matrix size
-EVAL_USERS      = 1000
-N_COMPONENTS    = None    # not applicable for autoencoder
-EPOCHS          = 20
-BATCH_SIZE      = 128
-PATIENCE        = 3
-PAIRS_PER_USER  = 20      # BPR pairs sampled per user per epoch
+SEED         = 42
+TRAIN_USERS  = 10000   # subsample for tractable matrix size
+EVAL_USERS   = 1000
+N_COMPONENTS = None    # not applicable for autoencoder
+EPOCHS       = 200     # model needs many epochs to converge; early stopping handles the rest
+BATCH_SIZE   = 128
+PATIENCE     = 10      # patience=10 catches the real plateau; model improves slowly past ep 20
+ALPHA        = 5.0     # confidence weight for above-average observed items (weighted MSE)
 
 torch.manual_seed(SEED)
 
@@ -44,9 +44,9 @@ matrix = build_user_item_matrix(train_sub)
 print(f"  Matrix shape: {matrix.shape}")
 
 # --- train autoencoder ---
-print(f"Training autoencoder (epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, pairs_per_user={PAIRS_PER_USER})...")
+print(f"Training autoencoder (epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, alpha={ALPHA})...")
 _t0 = time.time()
-model = train_autoencoder(matrix, epochs=EPOCHS, batch_size=BATCH_SIZE, patience=PATIENCE, pairs_per_user=PAIRS_PER_USER)
+model = train_autoencoder(matrix, epochs=EPOCHS, batch_size=BATCH_SIZE, patience=PATIENCE, alpha=ALPHA)
 TRAIN_SECS = round(time.time() - _t0, 1)
 print(f"  Train time: {TRAIN_SECS}s")
 
@@ -74,9 +74,9 @@ print("✅ Saved model/autoencoder.pt + model/ae_matrix.pkl")
 # --- record run in tracker ---
 # Edit COMMENT before each run to describe what changed.
 COMMENT = (
-    f"Autoencoder v2 — Dense 128→32→128, Sigmoid, BPR ranking loss. "
-    f"epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, "
-    f"pairs_per_user={PAIRS_PER_USER}, train_users={TRAIN_USERS}."
+    f"Autoencoder v3 — weighted MSE (alpha={ALPHA}), mean-centred rows, target>0 mask "
+    f"(above-avg items only, correct for top-N ranking). "
+    f"epochs={EPOCHS}, batch={BATCH_SIZE}, patience={PATIENCE}, train_users={TRAIN_USERS}."
 )
 log_run(
     "report/model_performance_tracker.xlsx",
@@ -85,8 +85,7 @@ log_run(
     {
         "split": "leave-one-out", "min_ratings": 5, "n_recommendations": 10,
         "epochs": EPOCHS, "batch_size": BATCH_SIZE, "patience": PATIENCE,
-        "train_users": TRAIN_USERS, "pairs_per_user": PAIRS_PER_USER,
-        "train_secs": TRAIN_SECS,
+        "train_users": TRAIN_USERS, "alpha": ALPHA, "train_secs": TRAIN_SECS,
     },
     COMMENT,
 )
