@@ -8,23 +8,17 @@ Run everything with `python scripts/run_all.py`
 
 Script run_all basically does the following: 
 
-Check if data files anime.csv and rating.csv exist in data dir.
-If not, extract data/data.zip to place raw data files there.
-
-Clean data with `python scripts/clean_data.py` 
-
-Analyze data with `python scripts/analyze_data.py`
-
-Vizualize creates a little html file `python scripts/visualize_data.py` 
-
-run model scripts with 
-baseline (popularity) `python scripts/run_baseline.py`
-Bag of Words `python scripts/run_bow.py`
-TF-IDF `python scripts/run_baseline.py`
-Autoencoder `python scripts/run_baseline.py`
-NCF `python scripts/run_baseline.py`
-
-Start UI with
-`streamlit run app/streamlit_app.py`
+    1. Clean raw data  → data/anime_clean.csv, data/rating_clean.csv
+    2. Split data      → data/train.csv, data/test.csv
+    3. Sample eval set → data/eval_users.csv  (1 000 users, seed 42)
+    4. Visualise data  → data/anime_analysis.html, data/ratings_analysis.html
+    5. Baseline model  → model run + tracker entry
+    6. BoW model       → model run + tracker entry
+    7. TF-IDF model    → model run + tracker entry
+    8. SVD model       → model run + tracker entry
+    9. Autoencoder     → model run + tracker entry
+   10. NCF             → model run + tracker entry
+   11. Inspection report → report/manual_inspection.txt
+   12. Launch Streamlit UI (replaces this process — Ctrl+C to stop)
 
 The above steps can be executed manually as well. 
