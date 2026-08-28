@@ -39,7 +39,8 @@ def fold_in_user(
     """
     col_index = {aid: i for i, aid in enumerate(anime_columns)}
     rated_ids = set()
-    r = np.zeros(len(anime_columns), dtype=np.float32)
+    # float64 to match Vt dtype and avoid mixed-precision overflow on Apple Silicon
+    r = np.zeros(len(anime_columns), dtype=np.float64)
     for p in picks:
         aid = p["anime_id"]
         if aid in col_index:
@@ -47,9 +48,11 @@ def fold_in_user(
             rated_ids.add(aid)
 
     # project: u_latent = r @ Vt^T  (shape: n_components)
-    u_latent = r @ Vt.T                     # (n_components,)
-    scores   = u_latent @ Vt                # (n_anime,)
-    scores   = np.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
+    # errstate suppresses the platform-level BLAS overflow warnings (Apple Silicon / NumPy quirk)
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        u_latent = r @ Vt.T                 # (n_components,)
+        scores   = u_latent @ Vt            # (n_anime,)
+    scores = np.nan_to_num(scores, nan=0.0, posinf=0.0, neginf=0.0)
 
     score_series = pd.Series(scores, index=anime_columns)
     score_series = score_series.drop(index=[i for i in rated_ids if i in score_series.index])

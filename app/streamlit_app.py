@@ -426,7 +426,7 @@ with tab3:
         picks.append({"name": resolved, "anime_id": name_to_id.get(resolved), "rating": rating})
 
     with st.form("picker_form"):
-        submitted = st.form_submit_button("🔍 Вземи препоръки", width="stretch")
+        submitted = st.form_submit_button("🔍 Препоръчай ми", width="stretch")
 
     if submitted:
         # validate — no duplicate picks, no missing IDs

@@ -2122,6 +2122,26 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
     84/84 tests pass.
 
 ---
+
+    ### User: fix errors when using live recommendations demo (RuntimeWarning: divide by zero / overflow / invalid in matmul, svd.py:50-51)
+
+    **Bob:** The external edit to `src/models/svd.py` had reverted two things in `fold_in_user`: the rating vector `r` was changed back to `float32` (line 42), and the `np.errstate` suppressor was removed from the two matmul lines.
+
+    Root cause (same as the historical bow/tfidf/svd matmul saga): `r` was `float32` while `Vt` is `float64` — mixed-precision matmul triggers platform-level BLAS overflow warnings on Apple Silicon. The `errstate` wrapper suppresses the false-positive NumPy warnings that persist even when the data itself is clean.
+
+    Fix in `src/models/svd.py` `fold_in_user`:
+    - Changed `r = np.zeros(..., dtype=np.float32)` → `dtype=np.float64` to match `Vt`.
+    - Re-wrapped `u_latent = r @ Vt.T` and `scores = u_latent @ Vt` in `with np.errstate(over="ignore", invalid="ignore", divide="ignore")`.
+
+    Verified clean with `python -W error` (any surviving warning would raise). 84/84 tests pass.
+
+---
+
+    ### User: instead of "Вземи препоръки" "Препоръчай ми"
+
+    **Bob:** Changed the live recommender submit button label from `"🔍 Вземи препоръки"` to `"🔍 Препоръчай ми"` in `app/streamlit_app.py`.
+
+---
   }
 
 }
