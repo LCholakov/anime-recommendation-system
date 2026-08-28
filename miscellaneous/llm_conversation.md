@@ -2142,6 +2142,17 @@ Root cause: Streamlit hot-reload does not reliably reload modules already in `sy
     **Bob:** Changed the live recommender submit button label from `"🔍 Вземи препоръки"` to `"🔍 Препоръчай ми"` in `app/streamlit_app.py`.
 
 ---
+
+    ### User: remove precision and recall from the ui. They're useless
+
+    **Bob:** Removed Precision @10 and Recall @10 from every UI surface in `app/streamlit_app.py`:
+    - **Tab 2 comparison table**: `metric_cols` reduced to `["Model", "Hit Rate @10", "Comments"]`; `highlight_max` subset down to `["Hit Rate @10"]`.
+    - **Tab 4 experiment result card**: was 3 metric tiles (HR / Precision / Recall); now single tile showing Hit Rate @K only.
+    - **Tab 4 history tables** (`_MODEL_COLS` + fallback default): removed `"Precision @10"` and `"Recall @10"` from every model's column list; `metric_cols` for coercion/formatting reduced to `["Hit Rate @10"]`.
+
+    84/84 tests pass.
+
+---
   }
 
 }

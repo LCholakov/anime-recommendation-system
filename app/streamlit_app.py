@@ -246,14 +246,13 @@ with tab2:
 
     # ── metrics table ────────────────────────────────────────────────────────
     st.subheader("Таблица с резултати")
-    metric_cols = ["Model", "Hit Rate @10", "Precision @10", "Recall @10", "Comments"]
+    metric_cols = ["Model", "Hit Rate @10", "Comments"]
     available   = [c for c in metric_cols if c in tracker.columns]
     st.dataframe(
         tracker[available].style.format(
-            {c: "{:.4f}" for c in ["Hit Rate @10", "Precision @10", "Recall @10"]
-             if c in tracker.columns}
+            {"Hit Rate @10": "{:.4f}"} if "Hit Rate @10" in tracker.columns else {}
         ).highlight_max(
-            subset=["Hit Rate @10", "Precision @10", "Recall @10"],
+            subset=["Hit Rate @10"],
             color="#d4edda",
         ),
         width="stretch",
@@ -585,19 +584,19 @@ with tab4:
     # columns shown in the history table, per model
     _MODEL_COLS = {
         "Baseline":    ["Run #", "Timestamp", "m_percentile", "n_recommendations",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
         "BoW":         ["Run #", "Timestamp", "min_rating_threshold", "n_recommendations",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
         "TF-IDF":      ["Run #", "Timestamp", "min_rating_threshold", "sublinear_tf", "n_recommendations",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
         "SVD":         ["Run #", "Timestamp", "n_components", "n_recommendations", "Train time (s)",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
         "Autoencoder": ["Run #", "Timestamp", "epochs", "batch_size", "patience",
                         "train_users", "alpha", "n_recommendations", "Train time (s)",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
         "NCF":         ["Run #", "Timestamp", "embed_dim", "epochs", "batch_size",
                         "patience", "n_per_user", "n_recommendations", "Train time (s)",
-                        "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment"],
+                        "Hit Rate @10", "What changed / Comment"],
     }
 
     def _show_result(key, model_label):
@@ -605,10 +604,8 @@ with tab4:
         r = st.session_state.get(key)
         if r:
             st.success(r["msg"])
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Hit Rate @K",  r["metrics"]["hit_rate"])
-            c2.metric("Precision @K", r["metrics"]["precision"])
-            c3.metric("Recall @K",    r["metrics"]["recall"])
+            c1, = st.columns(1)
+            c1.metric("Hit Rate @K", r["metrics"]["hit_rate"])
             if r.get("epochs_log"):
                 st.code(r["epochs_log"])
 
@@ -623,9 +620,9 @@ with tab4:
             else:
                 show_cols = [c for c in _MODEL_COLS.get(model_label, [
                     "Run #", "Timestamp",
-                    "Hit Rate @10", "Precision @10", "Recall @10", "What changed / Comment",
+                    "Hit Rate @10", "What changed / Comment",
                 ]) if c in hist.columns]
-                metric_cols = ["Hit Rate @10", "Precision @10", "Recall @10"]
+                metric_cols = ["Hit Rate @10"]
                 int_cols    = ["Run #", "m_percentile", "n_recommendations",
                                "min_rating_threshold",
                                "epochs", "batch_size", "patience", "embed_dim",
